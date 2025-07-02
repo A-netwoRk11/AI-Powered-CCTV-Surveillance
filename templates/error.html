@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -80,3 +81,87 @@
     </div>
 </body>
 </html>
+=======
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Error - AI-Powered CCTV Surveillance</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: 'Poppins', sans-serif;
+            background-color: #1a1a2e;
+            color: #fff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .error-container {
+            background: rgba(1, 21, 26, 0.356);
+            border-radius: 16px;
+            box-shadow: rgb(0, 0, 0, 0.7) 5px 10px 50px;
+            backdrop-filter: blur(5px);
+            max-width: 600px;
+            padding: 40px;
+            text-align: center;
+        }
+
+        .error-icon {
+            color: #ff5252;
+            font-size: 48px;
+            margin-bottom: 20px;
+        }
+
+        .btn {
+            padding: 15px 30px;
+            background: linear-gradient(90deg, #3a1c71, #1e6277, #0c7583);
+            border: none;
+            border-radius: 15px;
+            color: #fff;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            margin: 20px 0;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        .error-details {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 8px;
+            padding: 15px;
+            margin: 20px 0;
+            text-align: left;
+        }
+    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="error-container">
+        <div class="error-icon">⚠️</div>
+        <h1>Processing Error</h1>
+        
+        <div class="error-details">
+            <strong>Error Details:</strong>
+            <p>{{ error }}</p>
+        </div>
+        
+        <p>There was a problem processing your video. This could be due to:</p>
+        <ul style="text-align: left;">
+            <li>Invalid video format (try MP4, AVI, MOV)</li>
+            <li>Video file corrupted or too large</li>
+            <li>YOLO model not properly loaded</li>
+            <li>Insufficient system resources</li>
+        </ul>
+        
+        <p>Please try again with a different video or check your system setup.</p>
+        
+        <a href="/" class="btn">🔄 Try Again</a>
+        <a href="/test-upload" class="btn">🧪 Test Upload</a>
+    </div>
+</body>
+</html>
+>>>>>>> 91276018eae2976736e3a9f79ca130b98400e8fb

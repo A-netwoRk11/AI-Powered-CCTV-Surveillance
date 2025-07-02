@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -181,3 +182,188 @@
     </script>
 </body>
 </html>
+=======
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Saved Analysis - {{ metadata.test_name if metadata else 'Analysis' }}</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: 'Poppins', sans-serif;
+            background-color: #1a1a2e;
+            font-size: 20px;
+            font-weight: 700;
+            color: #fff;
+        }
+
+        .navbar {
+            display: flex;
+            justify-content: space-between;
+            padding: 20px;
+            background-color: rgba(0,0,0,0.3);
+        }
+
+        .navbar a {
+            color: #fff;
+            text-decoration: none;
+            margin: 0 15px;
+        }
+
+        .section {
+            padding: 10px 20px;
+            text-align: center;
+        }
+
+        .card {
+            background: rgba(1, 21, 26, 0.356);
+            border-radius: 16px;
+            box-shadow: rgb(0, 0, 0, 0.7) 5px 10px 50px;
+            backdrop-filter: blur(5px);
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 20px;
+            display: flex;
+            align-items: center;
+        }
+
+        .card-content {
+            display: flex;
+            width: 100%;
+            align-items: center;
+        }
+
+        .text {
+            flex: 1;
+            text-align: left;
+        }
+
+        .metadata-card {
+            background: rgba(0, 100, 100, 0.2);
+            border-radius: 16px;
+            padding: 20px;
+            margin: 20px auto;
+            max-width: 800px;
+            text-align: left;
+        }
+
+        .original-video {
+            background: rgba(50, 50, 50, 0.3);
+            border-radius: 16px;
+            padding: 20px;
+            margin: 20px auto;
+            max-width: 800px;
+        }
+
+        .original-video video {
+            width: 100%;
+            max-width: 600px;
+            border-radius: 8px;
+        }
+
+        .btn {
+            padding: 15px 30px;
+            background-color: #044368;
+            border: none;
+            border-radius: 10px;
+            color: white;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            margin: 10px;
+            font-family: 'Poppins', sans-serif;
+            font-size: 16px;
+        }
+
+        .btn:hover {
+            background-color: #066891;
+        }
+
+        .no-results {
+            background: rgba(100, 50, 0, 0.2);
+            border-radius: 16px;
+            padding: 20px;
+            margin: 20px auto;
+            max-width: 800px;
+        }
+
+        .save-info {
+            background: rgba(0, 100, 0, 0.2);
+            border-radius: 16px;
+            padding: 20px;
+            margin: 20px auto;
+            max-width: 800px;
+        }
+
+        /* New styles for smart alert suggestion */
+        #smartAlert {
+            margin-top: 15px;
+            padding: 15px;
+            border-radius: 8px;
+            background: rgba(255, 165, 0, 0.1);
+            border: 1px solid #ffa500;
+            display: none;
+        }
+
+        #smartAlert h4 {
+            color: #ffa500;
+            margin-bottom: 10px;
+        }
+
+        #smartAlert p {
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+
+        #useSuggestionBtn {
+            background-color: #ffa500;
+            font-size: 14px;
+            padding: 8px 15px;
+        }
+    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins&display=swap" rel="stylesheet">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="logo">
+            <a href="/">🎥 AI-Powered CCTV Surveillance</a>
+        </div>
+        <div class="menu">
+            <a href="/">Home</a>
+            <a href="/saved_analysis">Saved Results</a>
+        </div>
+    </nav>
+
+    <div class="section">
+        <h1>📊 Saved Analysis Results</h1>
+        
+        <div style="margin: 30px 0;">
+            {% if not is_saved %}
+            <button class="btn" onclick="openVideoFolder()" style="font-size: 18px; padding: 15px 30px;">📁 Open Output Video Folder</button>
+            <a href="/" class="btn">🔄 Analyze New Video</a>
+            {% else %}
+            
+            <a href="/saved_analysis" class="btn">📁 Back to Saved Results</a>
+            
+            {% endif %}
+        </div>
+    </div>
+
+    <script>
+    function openVideoFolder() {
+        fetch('/open_video_folder')
+            .then(response => response.json())
+            .then(data => {
+                if (data.status !== 'success') {
+                    alert('❌ ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error opening folder:', error);            });
+    }
+    </script>
+</body>
+</html>
+>>>>>>> 91276018eae2976736e3a9f79ca130b98400e8fb
