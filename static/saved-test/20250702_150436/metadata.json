@@ -1,0 +1,64 @@
+{
+  "test_name": "Analysis1",
+  "prompt": "",
+  "video_filename": "20250702_150436_cleanhome.mp4",
+  "detections": [
+    {
+      "object": "pottedplant",
+      "count": 430,
+      "confidence": 0.8
+    },
+    {
+      "object": "tvmonitor",
+      "count": 224,
+      "confidence": 0.8
+    },
+    {
+      "object": "chair",
+      "count": 342,
+      "confidence": 0.8
+    },
+    {
+      "object": "vase",
+      "count": 20,
+      "confidence": 0.8
+    },
+    {
+      "object": "sofa",
+      "count": 10,
+      "confidence": 0.8
+    },
+    {
+      "object": "diningtable",
+      "count": 187,
+      "confidence": 0.8
+    },
+    {
+      "object": "bottle",
+      "count": 4,
+      "confidence": 0.8
+    },
+    {
+      "object": "person",
+      "count": 3,
+      "confidence": 0.8
+    }
+  ],
+  "timestamp": "20250702_150436",
+  "analysis_summary": "Detected 8 different object types with 1220 total detections including 3 person detections",
+  "total_frames": 430,
+  "person_detected": 3,
+  "objects_found": [
+    "pottedplant",
+    "tvmonitor",
+    "chair",
+    "vase",
+    "sofa",
+    "diningtable",
+    "bottle",
+    "person"
+  ],
+  "output_video": "D:\\ra1111\\Project\\CM3070-Camera-Surveillance-System-Project-main\\CM3070-Camera-Surveillance-System-Project-main\\output\\videos\\20250702_150436_cleanhome_analyzed_1.mp4",
+  "screenshot_saved": true,
+  "analyzed_video": "20250702_150436_cleanhome_analyzed_1.mp4"
+}

@@ -1,0 +1,22 @@
+{
+  "test_name": "Analysis1",
+  "prompt": "",
+  "video_filename": "20250702_151120_counter.mp4",
+  "detections": [
+    {
+      "object": "bird",
+      "count": 1,
+      "confidence": 0.8
+    }
+  ],
+  "timestamp": "20250702_151120",
+  "analysis_summary": "Detected 1 different object types with 1 total detections",
+  "total_frames": 614,
+  "person_detected": 0,
+  "objects_found": [
+    "bird"
+  ],
+  "output_video": "D:\\ra1111\\Project\\CM3070-Camera-Surveillance-System-Project-main\\CM3070-Camera-Surveillance-System-Project-main\\output\\videos\\20250702_151120_counter_analyzed_1.mp4",
+  "screenshot_saved": false,
+  "analyzed_video": "20250702_151120_counter_analyzed_1.mp4"
+}

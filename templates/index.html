@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI-Powered CCTV Surveillance for Industrial Process Monitoring</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: 'Poppins', sans-serif;
+            background-color: #1a1a2e;
+            font-size: 20px;
+            font-weight: 700;
+            color: #fff;
+        }
+
+        .navbar {
+            display: flex;
+            justify-content: space-between;
+            padding: 20px;
+            background-color: #00000000;
+        }
+
+        .navbar a {
+            color: #fff;
+            text-decoration: none;
+            margin: 0 15px;
+        }
+
+        .hero-section {
+            text-align: center;
+            padding: 20px 20px;
+        }
+
+        .hero-section h1 {
+            font-size: 55px;
+            margin-bottom: 20px;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        .hero-section p {
+            font-size: 18px;
+            margin-bottom: 20px;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        .btn {
+            padding: 15px 30px;
+            background-color: #044368;
+            border: none;
+            font-family: 'Poppins', sans-serif;
+            border-radius: 15px;
+            color: #fff;
+            cursor: pointer;
+            text-transform: uppercase;
+            box-shadow: 0 10px 10px rgba(0,0,0,0.15);
+            background: linear-gradient(90deg, #3a1c71, #1e6277, #0c7583);
+            margin: 10px;
+        }
+
+        .section {
+            padding: 20px 20px;
+            text-align: center;
+        }
+
+        .input-div {
+            position: relative;
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            border: 2px solid rgb(1, 235, 252);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            box-shadow: 0px 0px 100px rgb(1, 235, 252), inset 0px 0px 10px rgb(1, 235, 252), 0px 0px 5px rgb(255, 255, 255);
+            margin: 20px auto;
+        }
+
+        .input {
+            opacity: 0;
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            cursor: pointer;
+        }
+
+        .icon {
+            color: rgb(1, 235, 252);
+            font-size: 30px;
+        }
+
+        .form-group {
+            margin: 20px 0;
+        }
+
+        .form-group input, .form-group textarea {
+            width: 300px;
+            padding: 10px;
+            border: none;
+            border-radius: 10px;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        /* Responsive layout for main content */
+        @media (max-width: 768px) {
+            .main-content-flex {
+                flex-direction: column !important;
+            }
+            .form-group input, .form-group textarea {
+                width: 100% !important;
+            }
+        }
+
+        .integration-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin: 30px 0;
+            flex-wrap: wrap;
+        }
+
+        .integration-btn {
+            padding: 10px 20px;
+            background: linear-gradient(45deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            border-radius: 8px;
+            color: white;
+            cursor: pointer;
+            font-family: 'Poppins', sans-serif;
+            font-size: 14px;
+            transition: transform 0.2s;
+        }
+
+        .integration-btn:hover {
+            transform: translateY(-2px);
+        }
+
+        #fileName {
+            margin-top: 10px;
+            color: #30cfd0;
+        }
+    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins&display=swap" rel="stylesheet">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="logo">
+            <a href="/">🎥 AI-Powered CCTV Surveillance</a>
+        </div>
+        <div class="menu">
+            <a href="/saved_analysis">Saved Results</a>
+        </div>
+    </nav>
+
+    <div class="section">
+        <div class="hero-section">
+            <h1>AI-Powered CCTV Surveillance</h1>
+
+        <div style="margin-bottom: 20px;">
+            <p>If you first time use this website Then firstly create output folder for saving analyzed videos and screenshots.</p>
+            <button type="button" class="btn" onclick="createOutputFolder()" id="createFolderBtn" 
+                    style="background-color: #2E8B57; margin-bottom: 10px;">
+                📁 Create Output Folders
+            </button>
+        </div>
+
+        <div style="display: flex; gap: 30px; justify-content: center; flex-wrap: wrap; margin-bottom: 30px;">
+            
+            <div style="flex: 1; min-width: 300px; max-width: 450px; padding: 30px; border-radius: 15px; background: rgba(255,255,255,0.1); border: 2px solid #30cfd0;">
+                <h3 style="color: #30cfd0; text-align: center; margin-bottom: 20px;"> Upload & Analyze Video</h3>
+                
+                <form id="analysisForm" action="/analyze" method="post" enctype="multipart/form-data">
+                    <div class="input-div">
+                        <input type="file" name="videoFile" id="fileInput" class="input" accept="video/*" onchange="displayFileName()" required>
+                        <div class="icon">📁</div>
+                    </div>
+                    <p id="fileName">Click to select video file</p>
+                    
+                    <div class="form-group">
+                        <input type="text" name="test_name" placeholder="Analysis Name" value="Analysis1" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <textarea name="prompt" placeholder="Describe what you want to analyze in the video..." rows="3"></textarea>
+                    </div>
+                    
+                    <button type="submit" class="btn" id="analyzeButton">Analyze Video</button>
+                </form>
+            </div>
+
+            <div style="flex: 1; min-width: 300px; max-width: 450px; padding: 30px; border-radius: 15px; background: rgba(255,255,255,0.1); border: 2px solid #4794ed;">
+                <h3 style="color: #61d5ff; text-align: center; margin-bottom: 20px;">🎥 Live Recording & Analysis</h3>
+                
+                <div style="margin-bottom: 15px;">
+                    <label for="recordingDuration" style="color: white; display: block; margin-bottom: 5px;">Recording Duration:</label>
+                    <select id="recordingDuration" style="width: 100%; padding: 10px; border-radius: 5px; border: none;">
+                        <option value="10">10 seconds</option>
+                        <option value="30" selected>30 seconds</option>
+                        <option value="60">1 minute</option>
+                        <option value="120">2 minutes</option>
+                        <option value="300">5 minutes</option>
+                    </select>
+                </div>
+                
+                <div style="margin-bottom: 15px;">
+                    <input type="text" id="liveAnalysisName" placeholder="Analysis Name" value="Live_Recording_1" 
+                           style="width: 100%; padding: 10px; border: none; border-radius: 5px;">
+                </div>
+                
+                <div style="margin-bottom: 20px;">
+                    <textarea id="livePrompt" placeholder="Describe what you want to analyze in the live recording..." 
+                              rows="3" style="width: 100%; padding: 10px; border: none; border-radius: 5px;"></textarea>
+                </div>
+                
+                <button type="button" class="btn" onclick="startLiveRecording()" id="liveRecordBtn" 
+                        style="background-color: #FF6B6B; width: 100%; margin-bottom: 10px;">
+                    🎥 Start Live Recording
+                </button>
+                
+                <button type="button" class="btn" onclick="analyzeLiveRecording()" id="analyzeLiveBtn" 
+                        style="background-color: #4ECDC4; width: 100%;" disabled>
+                    🔍 Analyze Latest Recording
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    function displayFileName() {
+        var input = document.getElementById('fileInput');
+        var fileNameParagraph = document.getElementById('fileName');
+        
+        if (input.files && input.files.length > 0) {
+            var file = input.files[0];
+            fileNameParagraph.textContent = `Selected: ${file.name}`;
+        } else {
+            fileNameParagraph.textContent = 'Click to select video file';
+        }
+    }
+
+    function createOutputFolder() {
+        const createBtn = document.getElementById('createFolderBtn');
+        createBtn.textContent = '📁 Creating Folders...';
+        createBtn.disabled = true;
+
+        fetch('/create_output_folder', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                alert('✅ ' + data.message + '\n\nFolders created:\n' + 
+                      '• Videos: ' + data.paths.videos + '\n' +
+                      '• Screenshots: ' + data.paths.screenshots + '\n' +
+                      '• Uploads: ' + data.paths.uploads);
+                createBtn.textContent = '✅ Folders Created';
+                createBtn.style.backgroundColor = '#228B22';
+            } else {
+                alert('❌ ' + data.message);
+                createBtn.textContent = '📁 Create Output Folders (First Time Setup)';
+                createBtn.disabled = false;
+            }
+        })
+        .catch(error => {
+            alert('❌ Error creating folders: ' + error);
+            createBtn.textContent = '📁 Create Output Folders (First Time Setup)';
+            createBtn.disabled = false;
+        });
+    }
+
+    function startWebcamRecording() {
+        const webcamBtn = document.getElementById('webcamBtn');
+        const durationSelect = document.getElementById('recordingDuration');
+        const duration = parseInt(durationSelect.value);
+        
+        webcamBtn.textContent = `🎥 Recording for ${duration}s...`;
+        webcamBtn.disabled = true;
+        
+        fetch('/record_webcam', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ duration: duration })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                alert(`✅ ${data.message}\nVideo will be saved in output/videos folder.`);
+                
+                setTimeout(() => {
+                    webcamBtn.textContent = '🎥 Start Webcam Recording';
+                    webcamBtn.disabled = false;
+                }, (duration + 5) * 1000);
+            } else {
+                alert(`❌ Error: ${data.message}`);
+                webcamBtn.textContent = '🎥 Start Webcam Recording';
+                webcamBtn.disabled = false;
+            }
+        })
+        .catch(error => {
+            alert(`❌ Error: ${error}`);
+            webcamBtn.textContent = '🎥 Start Webcam Recording';
+            webcamBtn.disabled = false;
+        });
+    }
+
+    function startLiveRecording() {
+        const liveRecordBtn = document.getElementById('liveRecordBtn');
+        const analyzeLiveBtn = document.getElementById('analyzeLiveBtn');
+        const durationSelect = document.getElementById('recordingDuration');
+        const duration = parseInt(durationSelect.value);
+        
+        liveRecordBtn.textContent = `🎥 Recording for ${duration}s...`;
+        liveRecordBtn.disabled = true;
+        analyzeLiveBtn.disabled = true;
+        
+        fetch('/record_webcam', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ duration: duration })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                alert(`✅ Live recording started!\nRecording for ${duration} seconds...`);
+                
+                setTimeout(() => {
+                    liveRecordBtn.textContent = '🎥 Start Live Recording';
+                    liveRecordBtn.disabled = false;
+                    analyzeLiveBtn.disabled = false;
+                    alert('✅ Live recording completed! You can now analyze it.');
+                }, (duration + 2) * 1000);
+            } else {
+                alert(`❌ Error: ${data.message}`);
+                liveRecordBtn.textContent = '🎥 Start Live Recording';
+                liveRecordBtn.disabled = false;
+            }
+        })
+        .catch(error => {
+            alert(`❌ Error: ${error}`);
+            liveRecordBtn.textContent = '🎥 Start Live Recording';
+            liveRecordBtn.disabled = false;
+        });
+    }
+
+    function analyzeLiveRecording() {
+        const analyzeLiveBtn = document.getElementById('analyzeLiveBtn');
+        const analysisName = document.getElementById('liveAnalysisName').value;
+        const prompt = document.getElementById('livePrompt').value;
+        
+        analyzeLiveBtn.textContent = '🔍 Analyzing...';
+        analyzeLiveBtn.disabled = true;
+        
+        fetch('/analyze_live_recording', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ 
+                test_name: analysisName || 'Live_Recording_Analysis',
+                prompt: prompt || 'Analyze objects in this live recording'
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                alert(`✅ Live recording analyzed successfully!\nAnalysis Name: ${data.test_name}`);
+                window.location.href = '/saved_analysis';
+            } else {
+                alert(`❌ Error: ${data.message}`);
+            }
+            analyzeLiveBtn.textContent = '🔍 Analyze Latest Recording';
+            analyzeLiveBtn.disabled = false;
+        })
+        .catch(error => {
+            alert(`❌ Error: ${error}`);
+            analyzeLiveBtn.textContent = '🔍 Analyze Latest Recording';
+            analyzeLiveBtn.disabled = false;
+        });
+    }
+
+    function openVideoFolder() {
+        fetch('/open_video_folder', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                console.log('Videos folder opened successfully');
+            } else {
+                alert(`❌ Error: ${data.message}`);
+            }
+        })
+        .catch(error => {
+            console.error('Error opening videos folder:', error);
+        });
+    }
+
+    document.getElementById('analysisForm').addEventListener('submit', function(e) {
+        const fileInput = document.getElementById('fileInput');
+        if (fileInput.files.length === 0) {
+            e.preventDefault();
+            alert('Please select a video file first!');
+            return;
+        }
+       
+        document.getElementById('analyzeButton').textContent = 'Processing...';
+        document.getElementById('analyzeButton').disabled = true;
+    });
+    </script>
+    
+    <div class="copyright-section" style="
+        text-align: center; 
+        margin-top: 40px; 
+        padding: 20px; 
+        background-color: rgba(0,0,0,0.3); 
+        border-top: 1px solid #30cfd0;
+        color: #ccc;
+        font-size: 14px;">
+        <p style="margin: 5px 0;">
+            &copy; 2025 All rights reserved. ~Riya A Amipara
+        </p>
+        <p style="margin: 5px 0; font-size: 12px;">
+            AI-Powered CCTV Surveillance System. Developed for Industrial Process Monitoring and Analysis.
+        </p>
+    </div>
+</body>
+</html>

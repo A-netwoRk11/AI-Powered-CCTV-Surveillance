@@ -1,0 +1,46 @@
+{
+  "test_name": "Analysis1",
+  "prompt": "",
+  "video_filename": "20250702_145038_burglarCaughtInAction.mp4",
+  "detections": [
+    {
+      "object": "chair",
+      "count": 421,
+      "confidence": 0.8
+    },
+    {
+      "object": "person",
+      "count": 313,
+      "confidence": 0.8
+    },
+    {
+      "object": "tvmonitor",
+      "count": 636,
+      "confidence": 0.8
+    },
+    {
+      "object": "sofa",
+      "count": 23,
+      "confidence": 0.8
+    },
+    {
+      "object": "laptop",
+      "count": 2,
+      "confidence": 0.8
+    }
+  ],
+  "timestamp": "20250702_145038",
+  "analysis_summary": "Detected 5 different object types with 1395 total detections including 313 person detections",
+  "total_frames": 1386,
+  "person_detected": 313,
+  "objects_found": [
+    "chair",
+    "person",
+    "tvmonitor",
+    "sofa",
+    "laptop"
+  ],
+  "output_video": "D:\\ra1111\\Project\\CM3070-Camera-Surveillance-System-Project-main\\CM3070-Camera-Surveillance-System-Project-main\\output\\videos\\20250702_145038_burglarCaughtInAction_analyzed_1.mp4",
+  "screenshot_saved": true,
+  "analyzed_video": "20250702_145038_burglarCaughtInAction_analyzed_1.mp4"
+}
