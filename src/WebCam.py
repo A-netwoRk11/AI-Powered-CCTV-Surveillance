@@ -8,42 +8,16 @@ from ultralytics import YOLO
 from pathlib import Path
 
 sys.path.append(os.path.dirname(os.path.dirname(__file__)))
-
-# Try to import config with fallback
-try:
-    from config.settings import *
-    print("✅ Config imported in WebCam")
-except Exception as e:
-    print(f"⚠️ Config import failed in WebCam: {e}")
-    # Fallback paths
-    BASE_DIR = Path(__file__).parent.parent
-    OUTPUT_DIR = BASE_DIR / "output"
-    OUTPUT_VIDEOS_DIR = OUTPUT_DIR / "videos"
-    SCREENSHOTS_DIR = OUTPUT_DIR / "screenshots"
-    UPLOADS_DIR = OUTPUT_DIR / "uploads"
-    COCO_NAMES = BASE_DIR / "data" / "coco.names"
-    MODELS_DIR = BASE_DIR / "models"
-    YOLO_MODEL = MODELS_DIR / "yolov8n.pt"
-    print(f"📂 Using fallback paths in WebCam")
+from config.settings import *
 
 CONFIDENCE = 0.5
 font_scale = 1
 thickness = 1
 
-labels = open(COCO_NAMES).read().strip().split("\n") if COCO_NAMES.exists() else []
-colors = np.random.randint(0, 255, size=(len(labels) if labels else 80, 3), dtype="uint8")
+labels = open(COCO_NAMES).read().strip().split("\n")
+colors = np.random.randint(0, 255, size=(len(labels), 3), dtype="uint8")
 
-# Auto-download YOLO model if not found
-try:
-    if YOLO_MODEL.exists():
-        model = YOLO(str(YOLO_MODEL))
-    else:
-        print("🔄 YOLO model not found locally, downloading...")
-        model = YOLO('yolov8n.pt')  # Auto-downloads
-        print("✅ YOLO model downloaded successfully")
-except Exception as e:
-    print(f"❌ Error loading YOLO model: {e}")
-    model = YOLO('yolov8n.pt')  # Fallback to auto-download
+model = YOLO(str(YOLO_MODEL))
 
 recording_duration = int(os.environ.get('RECORDING_DURATION', 30))
 
