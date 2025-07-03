@@ -50,37 +50,52 @@ app.config['UPLOAD_FOLDER'] = str(UPLOADS_DIR)
 app.config['MAX_CONTENT_LENGTH'] = 100 * 1024 * 1024  # Reduced to 100MB for server
 
 def create_output_structure():
-    """Create comprehensive output folder structure"""
+    """Create output folder structure only when actually needed"""
     try:
-        # Core output directories
+        # Only create the basic output directory structure - no files
         directories = [
             OUTPUT_DIR,
             OUTPUT_VIDEOS_DIR,
             SCREENSHOTS_DIR,
-            UPLOADS_DIR,
+            UPLOADS_DIR
+        ]
+        
+        # Create directories only
+        for directory in directories:
+            os.makedirs(directory, exist_ok=True)
+            print(f"📁 Created directory: {directory}")
+        
+        print(f"✅ Output directories ready at: {OUTPUT_DIR}")
+        return True
+    except Exception as e:
+        print(f"❌ Failed to create output directories: {e}")
+        return False
+
+def create_static_folders():
+    """Create static folders only when actually saving results"""
+    try:
+        # Only create static directories when needed - no sample files
+        static_dirs = [
             STATIC_DIR / 'saved-test',
             STATIC_DIR / 'results'
         ]
         
-        # Create all directories
-        for directory in directories:
+        for directory in static_dirs:
             os.makedirs(directory, exist_ok=True)
-            print(f"📁 Created/verified: {directory}")
+            print(f"📁 Created static directory: {directory}")
         
-        # Create timestamp-based subdirectories in saved-test (sample structure)
-        # This ensures the folder structure is ready for saving analysis results
-        try:
-            sample_timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-            sample_dir = STATIC_DIR / 'saved-test' / sample_timestamp
-            os.makedirs(sample_dir, exist_ok=True)
-            print(f"📁 Created sample timestamp dir: {sample_dir}")
-        except Exception as e:
-            print(f"⚠️ Could not create sample timestamp dir: {e}")
-        
-        print(f"✅ Complete output structure created at: {OUTPUT_DIR}")
         return True
     except Exception as e:
-        print(f"❌ Failed to create output structure: {e}")
+        print(f"❌ Failed to create static folders: {e}")
+        return False
+
+def ensure_upload_folder():
+    """Ensure upload folder exists only when uploading"""
+    try:
+        os.makedirs(UPLOADS_DIR, exist_ok=True)
+        return True
+    except Exception as e:
+        print(f"❌ Failed to create upload folder: {e}")
         return False
 
 @app.template_global()
@@ -89,8 +104,8 @@ def zip_lists(*args):
 
 app.jinja_env.globals.update(zip=zip)
 
-# Create output structure at startup
-create_output_structure()
+# Don't create folders at startup - only when needed
+print("📋 App initialized, folders will be created only when needed")
 
 # Try to load AI models (optional for server startup)
 model = None
@@ -187,6 +202,10 @@ def analyze_video():
         filename = secure_filename(file.filename)
         timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
         safe_filename = f"{timestamp}_{filename}"
+        
+        # Create upload folder only when needed
+        ensure_upload_folder()
+        
         filepath = UPLOADS_DIR / safe_filename
         file.save(str(filepath))
         
@@ -199,16 +218,31 @@ def analyze_video():
         print(f"📁 File size: {filepath.stat().st_size if filepath.exists() else 'File not found'}")
         
         print("🔄 Importing surveillanceCam module...")
-        from surveillanceCam import process_video
-        print("✅ Module imported successfully")
+        try:
+            from surveillanceCam import process_video
+            print("✅ Module imported successfully")
+        except Exception as import_error:
+            print(f"❌ Failed to import surveillanceCam: {import_error}")
+            return render_template('error.html', error='Video processing module not available')
+        
+        # Ensure output directory exists before processing
+        try:
+            os.makedirs(OUTPUT_VIDEOS_DIR, exist_ok=True)
+            print(f"📂 Output directory ready: {OUTPUT_VIDEOS_DIR}")
+        except Exception as dir_error:
+            print(f"❌ Failed to create output directory: {dir_error}")
+            return render_template('error.html', error='Cannot create output directory')
         
         print(f"🎥 Starting video processing...")
-        print(f"📂 Output directory: {OUTPUT_VIDEOS_DIR}")
-        detection_results = process_video(str(filepath), OUTPUT_VIDEOS_DIR)
-        print(f"🎯 Detection results: {detection_results}")
+        try:
+            detection_results = process_video(str(filepath), OUTPUT_VIDEOS_DIR)
+            print(f"🎯 Detection results: {detection_results}")
+        except Exception as process_error:
+            print(f"❌ Video processing failed: {process_error}")
+            return render_template('error.html', error=f'Video processing failed: {str(process_error)}')
         
         if detection_results is None:
-            return render_template('error.html', error='Failed to process video file')
+            return render_template('error.html', error='Failed to process video file - no results returned')
         
         detections = []
         for obj_name, count in detection_results.get('detections', {}).items():
@@ -239,18 +273,28 @@ def analyze_video():
             'screenshot_saved': detection_results.get('screenshot_saved', False)
         }
         
-        result_dir = STATIC_DIR / 'saved-test' / timestamp
-        result_dir.mkdir(parents=True, exist_ok=True)
-        
-        shutil.copy2(str(filepath), str(result_dir / safe_filename))
-        
-        if detection_results.get('output_file') and os.path.exists(detection_results['output_file']):
-            analyzed_filename = Path(detection_results['output_file']).name
-            shutil.copy2(detection_results['output_file'], str(result_dir / analyzed_filename))
-            result_data['analyzed_video'] = analyzed_filename
-        
-        with open(result_dir / 'metadata.json', 'w') as f:
-            json.dump(result_data, f, indent=2)
+        # Only save to static if everything is successful
+        try:
+            result_dir = STATIC_DIR / 'saved-test' / timestamp
+            result_dir.mkdir(parents=True, exist_ok=True)
+            
+            # Copy original video
+            shutil.copy2(str(filepath), str(result_dir / safe_filename))
+            
+            # Copy analyzed video if it exists
+            if detection_results.get('output_file') and os.path.exists(detection_results['output_file']):
+                analyzed_filename = Path(detection_results['output_file']).name
+                shutil.copy2(detection_results['output_file'], str(result_dir / analyzed_filename))
+                result_data['analyzed_video'] = analyzed_filename
+            
+            # Save metadata
+            with open(result_dir / 'metadata.json', 'w') as f:
+                json.dump(result_data, f, indent=2)
+                
+            print(f"✅ Results saved to static directory: {result_dir}")
+        except Exception as save_error:
+            print(f"⚠️ Could not save to static directory: {save_error}")
+            # Continue without saving to static - the video was still processed successfully
         
         print(f"✅ Analysis complete! Results saved to: {result_dir}")
         
@@ -478,21 +522,6 @@ def save_analysis():
             'message': f'Failed to save analysis: {str(e)}'
         }), 500
 
-def create_output_structure():
-    """Create output directory structure if it doesn't exist"""
-    try:
-        os.makedirs(OUTPUT_DIR, exist_ok=True)
-        
-        os.makedirs(OUTPUT_VIDEOS_DIR, exist_ok=True)
-        os.makedirs(SCREENSHOTS_DIR, exist_ok=True) 
-        os.makedirs(UPLOADS_DIR, exist_ok=True)
-        
-        print(f"✅ Output structure created at: {OUTPUT_DIR}")
-        return True
-    except Exception as e:
-        print(f"❌ Failed to create output structure: {e}")
-        return False
-
 @app.route('/create_output_folder', methods=['POST'])
 def create_output_folder():
     try:
@@ -634,13 +663,10 @@ if __name__ == '__main__':
     print(f"🤖 YOLO Model: {'✅ Loaded' if model else '❌ Failed'}")
     print(f"🏷️  Labels: {len(labels)} classes loaded")
     
-    # Ensure output structure exists
-    print("🔧 Ensuring output structure exists...")
-    create_output_structure()
-    
     print("🌐 Server starting...")
     print(f"🌍 Host: 0.0.0.0")
     print(f"🔌 Port: {int(os.environ.get('PORT', 5000))}")
+    print("📋 Note: Folders will be created only when needed (not at startup)")
     
     if check_dependencies():
         print("✅ All dependencies checked")

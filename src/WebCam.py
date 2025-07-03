@@ -8,7 +8,23 @@ from ultralytics import YOLO
 from pathlib import Path
 
 sys.path.append(os.path.dirname(os.path.dirname(__file__)))
-from config.settings import *
+
+# Try to import config with fallback
+try:
+    from config.settings import *
+    print("✅ Config imported in WebCam")
+except Exception as e:
+    print(f"⚠️ Config import failed in WebCam: {e}")
+    # Fallback paths
+    BASE_DIR = Path(__file__).parent.parent
+    OUTPUT_DIR = BASE_DIR / "output"
+    OUTPUT_VIDEOS_DIR = OUTPUT_DIR / "videos"
+    SCREENSHOTS_DIR = OUTPUT_DIR / "screenshots"
+    UPLOADS_DIR = OUTPUT_DIR / "uploads"
+    COCO_NAMES = BASE_DIR / "data" / "coco.names"
+    MODELS_DIR = BASE_DIR / "models"
+    YOLO_MODEL = MODELS_DIR / "yolov8n.pt"
+    print(f"📂 Using fallback paths in WebCam")
 
 CONFIDENCE = 0.5
 font_scale = 1
