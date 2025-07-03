@@ -569,9 +569,10 @@ if __name__ == '__main__':
     print("🌐 Server starting at http://localhost:5000")
     
     if check_dependencies():
-        threading.Thread(target=open_browser).start()
+        # Don't open browser on server deployment
+        pass
     
     signal.signal(signal.SIGINT, signal_handler)
     signal.signal(signal.SIGTERM, signal_handler)
     
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    app.run(debug=False, host='0.0.0.0', port=5000)
