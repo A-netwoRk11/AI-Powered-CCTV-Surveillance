@@ -22,10 +22,13 @@ sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 # Try to import config, create defaults if fails
 try:
     from config.settings import *
+    print("✅ Config imported successfully")
 except Exception as e:
     print(f"⚠️ Config import failed: {e}")
-    # Create default paths
+    print("🔄 Using fallback configuration...")
+    # Create default paths - ensure they're Path objects for consistency
     BASE_DIR = Path(__file__).parent.parent
+    SRC_DIR = BASE_DIR / "src"
     TEMPLATES_DIR = BASE_DIR / "templates"
     STATIC_DIR = BASE_DIR / "static"
     OUTPUT_DIR = BASE_DIR / "output"
@@ -35,6 +38,11 @@ except Exception as e:
     MODELS_DIR = BASE_DIR / "models"
     YOLO_MODEL = MODELS_DIR / "yolov8n.pt"
     COCO_NAMES = BASE_DIR / "data" / "coco.names"
+    INPUT_DIR = BASE_DIR / "input"
+    DEMO_VIDEOS_DIR = INPUT_DIR / "demo_videos"
+    TESTS_DIR = BASE_DIR / "tests"
+    print(f"📂 Fallback BASE_DIR: {BASE_DIR}")
+    print(f"📂 Fallback OUTPUT_DIR: {OUTPUT_DIR}")
 
 app = Flask(__name__, template_folder=str(TEMPLATES_DIR), static_folder=str(STATIC_DIR))
 app.config['SECRET_KEY'] = 'ai-cctv-surveillance-secret-key-2024'
@@ -42,12 +50,34 @@ app.config['UPLOAD_FOLDER'] = str(UPLOADS_DIR)
 app.config['MAX_CONTENT_LENGTH'] = 100 * 1024 * 1024  # Reduced to 100MB for server
 
 def create_output_structure():
+    """Create comprehensive output folder structure"""
     try:
-        os.makedirs(OUTPUT_DIR, exist_ok=True)
-        os.makedirs(OUTPUT_VIDEOS_DIR, exist_ok=True)
-        os.makedirs(SCREENSHOTS_DIR, exist_ok=True) 
-        os.makedirs(UPLOADS_DIR, exist_ok=True)
-        print(f"✅ Output structure created at: {OUTPUT_DIR}")
+        # Core output directories
+        directories = [
+            OUTPUT_DIR,
+            OUTPUT_VIDEOS_DIR,
+            SCREENSHOTS_DIR,
+            UPLOADS_DIR,
+            STATIC_DIR / 'saved-test',
+            STATIC_DIR / 'results'
+        ]
+        
+        # Create all directories
+        for directory in directories:
+            os.makedirs(directory, exist_ok=True)
+            print(f"📁 Created/verified: {directory}")
+        
+        # Create timestamp-based subdirectories in saved-test (sample structure)
+        # This ensures the folder structure is ready for saving analysis results
+        try:
+            sample_timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+            sample_dir = STATIC_DIR / 'saved-test' / sample_timestamp
+            os.makedirs(sample_dir, exist_ok=True)
+            print(f"📁 Created sample timestamp dir: {sample_dir}")
+        except Exception as e:
+            print(f"⚠️ Could not create sample timestamp dir: {e}")
+        
+        print(f"✅ Complete output structure created at: {OUTPUT_DIR}")
         return True
     except Exception as e:
         print(f"❌ Failed to create output structure: {e}")
@@ -59,13 +89,8 @@ def zip_lists(*args):
 
 app.jinja_env.globals.update(zip=zip)
 
-# Create output structure
+# Create output structure at startup
 create_output_structure()
-try:
-    os.makedirs(STATIC_DIR / 'saved-test', exist_ok=True)
-    os.makedirs(STATIC_DIR / 'results', exist_ok=True)
-except:
-    pass
 
 # Try to load AI models (optional for server startup)
 model = None
@@ -100,21 +125,33 @@ except Exception as e:
 def check_dependencies():
     print("🔍 Checking system dependencies...")
     
-    required_dirs = [MODELS_DIR, TEMPLATES_DIR, STATIC_DIR, OUTPUT_DIR]
+    required_dirs = [TEMPLATES_DIR, STATIC_DIR, OUTPUT_DIR]
+    missing_dirs = []
+    
     for directory in required_dirs:
         if not directory.exists():
+            missing_dirs.append(directory)
             print(f"❌ Missing directory: {directory}")
-            return False
+        else:
+            print(f"✅ Found directory: {directory}")
     
+    # Check optional files (won't fail startup if missing)
     if not YOLO_MODEL.exists():
-        print(f"❌ Missing YOLO model: {YOLO_MODEL}")
-        return False
+        print(f"⚠️ YOLO model not found: {YOLO_MODEL} (will auto-download)")
+    else:
+        print(f"✅ Found YOLO model: {YOLO_MODEL}")
     
     if not COCO_NAMES.exists():
-        print(f"❌ Missing COCO names: {COCO_NAMES}")
+        print(f"⚠️ COCO names not found: {COCO_NAMES} (using defaults)")
+    else:
+        print(f"✅ Found COCO names: {COCO_NAMES}")
+    
+    # Only fail if critical directories are missing
+    if missing_dirs:
+        print(f"❌ Critical directories missing: {missing_dirs}")
         return False
     
-    print("✅ All dependencies found!")
+    print("✅ All critical dependencies found!")
     return True
 
 def open_browser():
@@ -589,16 +626,28 @@ def analyze_live_recording():
 
 if __name__ == '__main__':
     print("🚀 Starting AI-Powered CCTV Surveillance Web Interface...")
+    print(f"📂 Base Directory: {BASE_DIR}")
     print(f"📂 Templates: {TEMPLATES_DIR}")
     print(f"📂 Static: {STATIC_DIR}")
+    print(f"📂 Output: {OUTPUT_DIR}")
     print(f"📂 Uploads: {UPLOADS_DIR}")
     print(f"🤖 YOLO Model: {'✅ Loaded' if model else '❌ Failed'}")
     print(f"🏷️  Labels: {len(labels)} classes loaded")
-    print("🌐 Server starting at http://localhost:5000")
+    
+    # Ensure output structure exists
+    print("🔧 Ensuring output structure exists...")
+    create_output_structure()
+    
+    print("🌐 Server starting...")
+    print(f"🌍 Host: 0.0.0.0")
+    print(f"🔌 Port: {int(os.environ.get('PORT', 5000))}")
     
     if check_dependencies():
+        print("✅ All dependencies checked")
         # Don't open browser on server deployment
         pass
+    else:
+        print("⚠️ Some dependencies missing, but continuing...")
     
     signal.signal(signal.SIGINT, signal_handler)
     signal.signal(signal.SIGTERM, signal_handler)
