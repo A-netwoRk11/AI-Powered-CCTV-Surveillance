@@ -1,0 +1,7 @@
+# Force Render Rebuild
+# Deployment trigger file
+# Last updated: July 3, 2025
+# This file forces Render to rebuild the application
+
+BUILD_TIMESTAMP=2025-07-03-$(date +%H%M%S)
+DEPLOYMENT_STATUS=FORCED_REBUILD
