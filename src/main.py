@@ -56,8 +56,11 @@ try:
     if YOLO_MODEL.exists():
         model = YOLO(str(YOLO_MODEL))
     else:
-        model = None
-        print(f"⚠️ Warning: YOLO model not found at {YOLO_MODEL}")
+        print(f"⚠️ YOLO model not found at {YOLO_MODEL}")
+        print("🔄 Downloading YOLO model...")
+        # YOLO will auto-download on first use
+        model = YOLO('yolov8n.pt')  # This auto-downloads
+        print("✅ YOLO model downloaded successfully")
     
     if COCO_NAMES.exists():
         labels = open(str(COCO_NAMES)).read().strip().split("\n")
@@ -68,6 +71,7 @@ except Exception as e:
     model = None
     labels = []
     print(f"⚠️ Warning: YOLO model loading failed: {e}")
+    print("🔄 Will try to auto-download YOLO model on first use")
 
 def check_dependencies():
     print("🔍 Checking system dependencies...")

@@ -1,0 +1,23 @@
+# Large model files - download separately
+models/*.weights
+models/*.pt
+models/*.h5
+models/*.onnx
+
+# Output files
+output/
+uploads/
+static/saved-test/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+
+# Environment
+venv/
+.env
+
+# IDE
+.vscode/
+.idea/

@@ -14,10 +14,20 @@ CONFIDENCE = 0.4
 font_scale = 1
 thickness = 1
 
-labels = open(str(COCO_NAMES)).read().strip().split("\n")
-colors = np.random.randint(0, 255, size=(len(labels), 3), dtype="uint8")
+labels = open(str(COCO_NAMES)).read().strip().split("\n") if COCO_NAMES.exists() else []
+colors = np.random.randint(0, 255, size=(len(labels) if labels else 80, 3), dtype="uint8")
 
-model = YOLO(str(YOLO_MODEL))
+# Auto-download YOLO model if not found
+try:
+    if YOLO_MODEL.exists():
+        model = YOLO(str(YOLO_MODEL))
+    else:
+        print("🔄 YOLO model not found locally, downloading...")
+        model = YOLO('yolov8n.pt')  # Auto-downloads
+        print("✅ YOLO model downloaded successfully")
+except Exception as e:
+    print(f"❌ Error loading YOLO model: {e}")
+    model = YOLO('yolov8n.pt')  # Fallback to auto-download
 
 def process_video(video_file_path, output_dir=None, skip_frames=2):
     print(f"🎬 Starting surveillance analysis on: {video_file_path}")
