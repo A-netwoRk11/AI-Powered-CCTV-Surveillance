@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Video Object Detection Web Interface
+Video Object Detection Web Interface - Production Ready
 Upload video → Get analyzed video with object detection
 """
 
@@ -10,32 +10,43 @@ import json
 import subprocess
 import datetime
 import shutil
+import signal
+import webbrowser
 from pathlib import Path
 from flask import Flask, render_template, request, redirect, url_for, send_file, jsonify
 from werkzeug.utils import secure_filename
-import cv2
-import numpy as np
-from ultralytics import YOLO
-import webbrowser
-import signal
-import threading
 
+# Add current directory to path for imports
 sys.path.append(os.path.dirname(os.path.dirname(__file__)))
-from config.settings import *
+
+# Try to import config, create defaults if fails
+try:
+    from config.settings import *
+except Exception as e:
+    print(f"⚠️ Config import failed: {e}")
+    # Create default paths
+    BASE_DIR = Path(__file__).parent.parent
+    TEMPLATES_DIR = BASE_DIR / "templates"
+    STATIC_DIR = BASE_DIR / "static"
+    OUTPUT_DIR = BASE_DIR / "output"
+    UPLOADS_DIR = OUTPUT_DIR / "uploads"
+    OUTPUT_VIDEOS_DIR = OUTPUT_DIR / "videos"
+    SCREENSHOTS_DIR = OUTPUT_DIR / "screenshots"
+    MODELS_DIR = BASE_DIR / "models"
+    YOLO_MODEL = MODELS_DIR / "yolov8n.pt"
+    COCO_NAMES = BASE_DIR / "data" / "coco.names"
 
 app = Flask(__name__, template_folder=str(TEMPLATES_DIR), static_folder=str(STATIC_DIR))
-app.config['SECRET_KEY'] = 'your-secret-key-here'
+app.config['SECRET_KEY'] = 'ai-cctv-surveillance-secret-key-2024'
 app.config['UPLOAD_FOLDER'] = str(UPLOADS_DIR)
-app.config['MAX_CONTENT_LENGTH'] = 500 * 1024 * 1024
+app.config['MAX_CONTENT_LENGTH'] = 100 * 1024 * 1024  # Reduced to 100MB for server
 
 def create_output_structure():
     try:
         os.makedirs(OUTPUT_DIR, exist_ok=True)
-        
         os.makedirs(OUTPUT_VIDEOS_DIR, exist_ok=True)
         os.makedirs(SCREENSHOTS_DIR, exist_ok=True) 
         os.makedirs(UPLOADS_DIR, exist_ok=True)
-        
         print(f"✅ Output structure created at: {OUTPUT_DIR}")
         return True
     except Exception as e:
@@ -48,17 +59,29 @@ def zip_lists(*args):
 
 app.jinja_env.globals.update(zip=zip)
 
+# Create output structure
 create_output_structure()
-os.makedirs(STATIC_DIR / 'saved-test', exist_ok=True)
-os.makedirs(STATIC_DIR / 'results', exist_ok=True)
+try:
+    os.makedirs(STATIC_DIR / 'saved-test', exist_ok=True)
+    os.makedirs(STATIC_DIR / 'results', exist_ok=True)
+except:
+    pass
+
+# Try to load AI models (optional for server startup)
+model = None
+labels = []
 
 try:
+    # Import AI libraries only when needed
+    from ultralytics import YOLO
+    import cv2
+    import numpy as np
+    
     if YOLO_MODEL.exists():
         model = YOLO(str(YOLO_MODEL))
     else:
         print(f"⚠️ YOLO model not found at {YOLO_MODEL}")
-        print("🔄 Downloading YOLO model...")
-        # YOLO will auto-download on first use
+        print("🔄 Will download YOLO model on first use...")
         model = YOLO('yolov8n.pt')  # This auto-downloads
         print("✅ YOLO model downloaded successfully")
     
@@ -67,11 +90,12 @@ try:
     else:
         labels = []
         print(f"⚠️ Warning: COCO names not found at {COCO_NAMES}")
+        
 except Exception as e:
     model = None
     labels = []
-    print(f"⚠️ Warning: YOLO model loading failed: {e}")
-    print("🔄 Will try to auto-download YOLO model on first use")
+    print(f"⚠️ Warning: AI models not loaded: {e}")
+    print("🔄 Models will be loaded when needed")
 
 def check_dependencies():
     print("🔍 Checking system dependencies...")
