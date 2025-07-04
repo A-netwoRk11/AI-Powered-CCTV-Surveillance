@@ -735,6 +735,7 @@ if __name__ == '__main__':
     
     # Start the Flask application
     try:
+<<<<<<< HEAD
         # Get port from environment variable (Render provides this)
         port = int(os.environ.get('PORT', WEB_CONFIG['PORT']))
         
@@ -743,6 +744,13 @@ if __name__ == '__main__':
             debug=WEB_CONFIG['DEBUG'],
             host='0.0.0.0',  # Bind to all interfaces for Render
             port=port,
+=======
+        # Use configuration from settings
+        app.run(
+            debug=WEB_CONFIG['DEBUG'],
+            host=WEB_CONFIG['HOST'],
+            port=WEB_CONFIG['PORT'],
+>>>>>>> aa90241dcdfa8025b86a32a95539432c2b354e4d
             threaded=True  # Enable threading for better performance
         )
     except Exception as e:
