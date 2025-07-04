@@ -10,10 +10,27 @@
             font-family: 'Poppins', sans-serif;
             background-color: #1a1a2e;
             color: #fff;
+            min-height: 100vh;
+        }
+
+        .navbar {
+            display: flex;
+            justify-content: space-between;
+            padding: 20px;
+            background-color: rgba(0,0,0,0.3);
+        }
+
+        .navbar a {
+            color: #fff;
+            text-decoration: none;
+            margin: 0 15px;
+        }
+
+        .error-wrapper {
             display: flex;
             justify-content: center;
             align-items: center;
-            min-height: 100vh;
+            min-height: calc(100vh - 80px);
         }
 
         .error-container {
@@ -56,7 +73,18 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins&display=swap" rel="stylesheet">
 </head>
 <body>
-    <div class="error-container">
+    <nav class="navbar">
+        <div class="logo">
+            <a href="/">🎥 AI-Powered CCTV Surveillance</a>
+        </div>
+        <div class="menu">
+            <a href="/">Home</a>
+            <a href="/saved_analysis">Saved Results</a>
+        </div>
+    </nav>
+
+    <div class="error-wrapper">
+        <div class="error-container">
         <div class="error-icon">⚠️</div>
         <h1>Processing Error</h1>
         
@@ -68,15 +96,18 @@
         <p>There was a problem processing your video. This could be due to:</p>
         <ul style="text-align: left;">
             <li>Invalid video format (try MP4, AVI, MOV)</li>
-            <li>Video file corrupted or too large</li>
+            <li>Video file too large (max 500MB allowed)</li>
+            <li>Video file corrupted or unreadable</li>
             <li>YOLO model not properly loaded</li>
             <li>Insufficient system resources</li>
+            <li>Network timeout during processing</li>
         </ul>
         
         <p>Please try again with a different video or check your system setup.</p>
         
         <a href="/" class="btn">🔄 Try Again</a>
-        <a href="/test-upload" class="btn">🧪 Test Upload</a>
+        <a href="/saved_analysis" class="btn">📁 View Saved Results</a>
+    </div>
     </div>
 </body>
 </html>
