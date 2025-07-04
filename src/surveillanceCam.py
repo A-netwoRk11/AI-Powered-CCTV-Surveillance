@@ -19,14 +19,42 @@ MAX_PERSON_SCREENSHOTS = 3
 YOLO_IMAGE_SIZE = 640
 
 # Load YOLO model and labels
-try:
-    labels = open(str(COCO_NAMES)).read().strip().split("\n")
-    colors = np.random.randint(0, 255, size=(len(labels), 3), dtype="uint8")
-    model = YOLO(str(YOLO_MODEL))
-    print("[OK] YOLO model loaded successfully")
-except Exception as e:
-    print(f"[ERROR] Error loading YOLO model: {e}")
-    sys.exit(1)
+model = None
+labels = []
+colors = []
+
+def initialize_surveillance_model():
+    """Initialize YOLO model and labels with proper error handling."""
+    global model, labels, colors
+    
+    if model is not None:
+        return True
+        
+    try:
+        if COCO_NAMES.exists():
+            labels = open(str(COCO_NAMES)).read().strip().split("\n")
+        else:
+            # Use default COCO labels if file is missing
+            labels = ['person', 'bicycle', 'car', 'motorcycle', 'airplane', 'bus', 'train', 'truck']
+        
+        colors = np.random.randint(0, 255, size=(len(labels), 3), dtype="uint8")
+        
+        if YOLO_MODEL.exists():
+            model = YOLO(str(YOLO_MODEL))
+            print("[OK] YOLO model loaded successfully")
+        else:
+            print(f"[WARNING] YOLO model not found at {YOLO_MODEL}")
+            print("[INFO] Model will be downloaded automatically on first use")
+            model = YOLO('yolov8n.pt')  # This will download the model
+            
+        return True
+            
+    except Exception as e:
+        print(f"[ERROR] Error loading YOLO model: {e}")
+        model = None
+        labels = []
+        colors = []
+        return False
 
 def draw_detection_box(image, xmin, ymin, xmax, ymax, class_id, confidence, object_name):
     """Draw detection box and label on image."""
@@ -70,6 +98,11 @@ def process_video(video_file_path, output_dir=None, skip_frames=DEFAULT_SKIP_FRA
         dict: Analysis results including detections and output file path
     """
     print(f"[INFO] Starting surveillance analysis on: {video_file_path}")
+    
+    # Initialize model if not already done
+    if not initialize_surveillance_model():
+        print(f"[ERROR] Failed to initialize YOLO model")
+        return None
     
     if output_dir is None:
         output_dir = OUTPUT_VIDEOS_DIR

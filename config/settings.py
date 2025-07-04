@@ -10,7 +10,7 @@ import sys
 from pathlib import Path
 
 # Environment detection
-ENV = os.environ.get('FLASK_ENV', 'development')
+ENV = os.environ.get('FLASK_ENV', os.environ.get('ENVIRONMENT', 'production'))
 DEBUG = ENV == 'development'
 
 # Base paths

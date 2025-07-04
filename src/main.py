@@ -55,6 +55,10 @@ def initialize_model():
     """Initialize YOLO model and labels with proper error handling."""
     global model, labels
     
+    # Return early if already initialized
+    if model is not None:
+        return True
+        
     try:
         if YOLO_MODEL.exists():
             model = YOLO(str(YOLO_MODEL))
@@ -72,10 +76,13 @@ def initialize_model():
             # Use default COCO labels if file is missing
             labels = ['person', 'bicycle', 'car', 'motorcycle', 'airplane', 'bus', 'train', 'truck']
             
+        return True
+            
     except Exception as e:
         logger.error(f"Model initialization failed: {e}")
         model = None
         labels = []
+        return False
 
 def create_output_structure():
     """Create output directory structure with proper error handling."""
@@ -129,7 +136,7 @@ if not validate_configuration():
     sys.exit(1)
 
 create_output_structure()
-initialize_model()
+# Note: Model initialization deferred until first use to avoid startup crashes
 
 # Template utilities
 @app.template_global()
@@ -738,9 +745,16 @@ if __name__ == '__main__':
         # Get port from environment variable (Render provides this)
         port = int(os.environ.get('PORT', WEB_CONFIG['PORT']))
         
+        # Force production mode if running on Render
+        is_render = os.environ.get('RENDER') or os.environ.get('RENDER_SERVICE_NAME')
+        debug_mode = WEB_CONFIG['DEBUG'] and not is_render
+        
+        if is_render:
+            logger.info("Running on Render - forcing production mode")
+        
         # Use configuration from settings
         app.run(
-            debug=WEB_CONFIG['DEBUG'],
+            debug=debug_mode,
             host='0.0.0.0',  # Bind to all interfaces for Render
             port=port,
             threaded=True  # Enable threading for better performance
@@ -750,6 +764,5 @@ if __name__ == '__main__':
         sys.exit(1)
 
 # WSGI entry point for Render deployment
-if __name__ != '__main__':
-    # When running under Gunicorn, we need to expose the app
-    application = app
+# Make the app available for Gunicorn
+application = app

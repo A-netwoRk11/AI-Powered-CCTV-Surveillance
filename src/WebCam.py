@@ -24,7 +24,10 @@ try:
     print("[OK] YOLO model loaded successfully")
 except Exception as e:
     print(f"[ERROR] Error loading YOLO model: {e}")
-    sys.exit(1)
+    # Don't exit, just use None and handle gracefully
+    model = None
+    labels = []
+    colors = []
 
 recording_duration = int(os.environ.get('RECORDING_DURATION', 30))
 
