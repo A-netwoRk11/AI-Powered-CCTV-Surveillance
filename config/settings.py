@@ -130,9 +130,12 @@ def validate_configuration():
         # Create necessary directories
         directories_to_create = [
             OUTPUT_DIR, OUTPUT_VIDEOS_DIR, SCREENSHOTS_DIR, UPLOADS_DIR,
-            RESULTS_DIR, SAVED_ANALYSIS_DIR, TEST_OUTPUT_DIR,
-            LOGGING_CONFIG['LOG_FILE'].parent
+            RESULTS_DIR, SAVED_ANALYSIS_DIR, TEST_OUTPUT_DIR
         ]
+        
+        # Add log directory only if LOG_FILE is configured
+        if LOGGING_CONFIG['LOG_FILE'] is not None:
+            directories_to_create.append(LOGGING_CONFIG['LOG_FILE'].parent)
         
         for directory in directories_to_create:
             directory.mkdir(parents=True, exist_ok=True)

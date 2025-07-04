@@ -33,9 +33,7 @@ from config.settings import *
 logging.basicConfig(
     level=getattr(logging, LOGGING_CONFIG['LEVEL']),
     format=LOGGING_CONFIG['FORMAT'],
-    handlers=[
-        logging.StreamHandler()  # Only console logging for deployment safety
-    ]
+    handlers=[logging.StreamHandler()]
 )
 logger = logging.getLogger(__name__)
 
