@@ -56,7 +56,7 @@ TEST_OUTPUT_DIR = BASE_DIR / "test_output"
 # Web server configuration
 WEB_CONFIG = {
     'HOST': os.environ.get('FLASK_HOST', '0.0.0.0'),
-    'PORT': int(os.environ.get('FLASK_PORT', 5000)),
+    'PORT': int(os.environ.get('PORT', os.environ.get('FLASK_PORT', '5000'))),
     'DEBUG': DEBUG,
     'SECRET_KEY': os.environ.get('SECRET_KEY', 'dev-secret-key-change-in-production'),
     'MAX_CONTENT_LENGTH': 500 * 1024 * 1024,  # 500MB max file size
@@ -109,7 +109,7 @@ DATABASE_CONFIG = {
 
 # Render deployment configuration
 RENDER_CONFIG = {
-    'PORT': int(os.environ.get('PORT', WEB_CONFIG['PORT'])),
+    'PORT': int(os.environ.get('PORT', '5000')),
     'WORKERS': int(os.environ.get('WEB_CONCURRENCY', 1)),
     'TIMEOUT': int(os.environ.get('TIMEOUT', 120)),
 }
