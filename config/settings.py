@@ -171,8 +171,4 @@ def get_config_summary():
 
 # Validate configuration on import
 if __name__ != "__main__":
-<<<<<<< HEAD
     validate_configuration()
-=======
-    validate_configuration()
->>>>>>> aa90241dcdfa8025b86a32a95539432c2b354e4d
