@@ -1,26 +1,26 @@
-# Core Flask application
-Flask==2.3.3
-Werkzeug==2.3.7
-Jinja2==3.1.2
-MarkupSafe==2.1.3
-itsdangerous==2.1.2
-gunicorn==21.2.0
+# Core Flask application - Python 3.13 compatible
+Flask>=3.0.0
+Werkzeug>=3.0.0
+Jinja2>=3.1.2
+MarkupSafe>=2.1.3
+itsdangerous>=2.1.2
+gunicorn>=21.2.0
 
-# Computer Vision - lightweight versions
-opencv-python-headless==4.8.1.78
-ultralytics==8.0.239
-Pillow==10.4.0
+# Computer Vision - Python 3.13 compatible
+opencv-python-headless>=4.8.0
+ultralytics>=8.1.0
+Pillow>=10.0.0
 
-# Machine Learning - CPU only (much smaller)
-torch==2.1.2+cpu --extra-index-url https://download.pytorch.org/whl/cpu
-torchvision==0.16.2+cpu --extra-index-url https://download.pytorch.org/whl/cpu
+# Machine Learning - CPU only, Python 3.13 compatible
+torch>=2.5.0
+torchvision>=0.20.0
 
-# Basic requirements
-numpy==1.24.3
-PyYAML==6.0.1
-requests==2.31.0
-tqdm==4.64.0
-matplotlib==3.7.1
-scipy==1.10.1
-pandas==2.0.3
-python-dotenv==1.0.0
+# Basic requirements - Python 3.13 compatible
+numpy>=1.24.0
+PyYAML>=6.0.1
+requests>=2.31.0
+tqdm>=4.64.0
+matplotlib>=3.7.0
+scipy>=1.10.0
+pandas>=2.0.0
+python-dotenv>=1.0.0
