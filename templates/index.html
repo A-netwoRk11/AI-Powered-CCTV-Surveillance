@@ -233,7 +233,17 @@
         
         if (input.files && input.files.length > 0) {
             var file = input.files[0];
-            fileNameParagraph.textContent = `Selected: ${file.name}`;
+            
+            // Check file size (500MB limit)
+            const maxSize = 500 * 1024 * 1024; // 500MB in bytes
+            if (file.size > maxSize) {
+                alert('❌ File too large! Maximum size allowed is 500MB.\nYour file: ' + (file.size / (1024 * 1024)).toFixed(1) + 'MB');
+                input.value = ''; // Clear the input
+                fileNameParagraph.textContent = 'Click to select video file';
+                return;
+            }
+            
+            fileNameParagraph.textContent = `Selected: ${file.name} (${(file.size / (1024 * 1024)).toFixed(1)}MB)`;
         } else {
             fileNameParagraph.textContent = 'Click to select video file';
         }
@@ -253,10 +263,11 @@
         .then(response => response.json())
         .then(data => {
             if (data.status === 'success') {
-                alert('✅ ' + data.message + '\n\nFolders created:\n' + 
-                      '• Videos: ' + data.paths.videos + '\n' +
-                      '• Screenshots: ' + data.paths.screenshots + '\n' +
-                      '• Uploads: ' + data.paths.uploads);
+                alert('✅ ' + data.message + '\n\n📁 Output folders created at:\n\n' + 
+                      '🎬 Videos: ' + data.paths.videos + '\n\n' +
+                      '📸 Screenshots: ' + data.paths.screenshots + '\n\n' +
+                      '📤 Uploads: ' + data.paths.uploads + '\n\n' +
+                      'You can now start analyzing videos!');
                 createBtn.textContent = '✅ Folders Created';
                 createBtn.style.backgroundColor = '#228B22';
             } else {
@@ -269,43 +280,6 @@
             alert('❌ Error creating folders: ' + error);
             createBtn.textContent = '📁 Create Output Folders (First Time Setup)';
             createBtn.disabled = false;
-        });
-    }
-
-    function startWebcamRecording() {
-        const webcamBtn = document.getElementById('webcamBtn');
-        const durationSelect = document.getElementById('recordingDuration');
-        const duration = parseInt(durationSelect.value);
-        
-        webcamBtn.textContent = `🎥 Recording for ${duration}s...`;
-        webcamBtn.disabled = true;
-        
-        fetch('/record_webcam', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ duration: duration })
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.status === 'success') {
-                alert(`✅ ${data.message}\nVideo will be saved in output/videos folder.`);
-                
-                setTimeout(() => {
-                    webcamBtn.textContent = '🎥 Start Webcam Recording';
-                    webcamBtn.disabled = false;
-                }, (duration + 5) * 1000);
-            } else {
-                alert(`❌ Error: ${data.message}`);
-                webcamBtn.textContent = '🎥 Start Webcam Recording';
-                webcamBtn.disabled = false;
-            }
-        })
-        .catch(error => {
-            alert(`❌ Error: ${error}`);
-            webcamBtn.textContent = '🎥 Start Webcam Recording';
-            webcamBtn.disabled = false;
         });
     }
 
