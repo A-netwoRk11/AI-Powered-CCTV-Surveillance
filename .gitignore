@@ -43,6 +43,9 @@ Thumbs.db
 output/
 static/saved-test/
 models/yolov3.weights
+models/yolov8n.pt
+models/*.weights
+models/*.pt
 *.mp4
 *.avi
 *.mov
