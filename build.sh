@@ -1,6 +1,9 @@
 #!/bin/bash
 # Render build script
 
+# Ensure we're in the right directory
+cd /opt/render/project
+
 # Install dependencies
 pip install --upgrade pip
 pip install -r requirements.txt
