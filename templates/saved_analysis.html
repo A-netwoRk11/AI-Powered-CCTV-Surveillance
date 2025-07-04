@@ -32,43 +32,105 @@
 
         .card-grid {
             display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
-            gap: 30px;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
             margin: 30px 0;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
         }
 
-        .card {
-            width: 300px;
-            height: 400px;
-            border-radius: 16px;
+        .analysis-item {
+            width: 100%;
+            padding: 20px;
+            border-radius: 12px;
             background: rgba(2, 57, 61, 0.6);
             backdrop-filter: blur(16px);
             box-shadow: 0 4px 30px rgba(0, 0, 0, 0.3);
-            overflow: hidden;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
             transition: transform 0.3s ease;
         }
 
-        .card:hover {
-            transform: translateY(-5px);
+        .analysis-item:hover {
+            transform: translateX(5px);
         }
 
-        .card a {
-            text-decoration: none;
-            color: inherit;
+        .analysis-info {
+            flex-grow: 1;
+            cursor: pointer;
+        }
+
+        .analysis-info h3 {
+            margin: 0 0 5px 0;
+            font-size: 18px;
+            color: #30cfd0;
+        }
+
+        .analysis-info p {
+            margin: 0;
+            font-size: 14px;
+            color: #ccc;
+        }
+
+        .menu-container {
+            position: relative;
+        }
+
+        .menu-btn {
+            background: none;
+            border: none;
+            color: #fff;
+            font-size: 20px;
+            cursor: pointer;
+            padding: 10px;
+            border-radius: 50%;
+            transition: background 0.3s ease;
+        }
+
+        .menu-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .dropdown-menu {
+            position: absolute;
+            right: 0;
+            top: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            border-radius: 8px;
+            min-width: 120px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+            display: none;
+            z-index: 1000;
+        }
+
+        .dropdown-menu.show {
             display: block;
-            height: 100%;
         }
 
-        .card video {
+        .dropdown-item {
+            padding: 12px 16px;
+            cursor: pointer;
+            border: none;
+            background: none;
+            color: #fff;
             width: 100%;
-            height: 60%;
-            object-fit: cover;
+            text-align: left;
+            font-size: 14px;
         }
 
-        .card-content {
-            padding: 20px;
-            text-align: center;
+        .dropdown-item:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .dropdown-item.delete {
+            color: #e74c3c;
+        }
+
+        .dropdown-item.delete:hover {
+            background: rgba(231, 76, 60, 0.2);
         }
 
         .btn {
@@ -82,6 +144,29 @@
             display: inline-block;
             margin: 10px;
             font-family: 'Poppins', sans-serif;
+        }
+
+        .delete-btn {
+            padding: 8px 15px;
+            background: linear-gradient(90deg, #c73e1d, #e74c3c);
+            border: none;
+            border-radius: 8px;
+            color: #fff;
+            cursor: pointer;
+            font-size: 12px;
+            margin-top: 10px;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        .delete-btn:hover {
+            background: linear-gradient(90deg, #e74c3c, #c0392b);
+        }
+
+        .card-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 10px;
         }
 
         .empty-state {
@@ -112,6 +197,39 @@
         </div>
     </div>
 
+    <!-- Dynamic Content Section -->
+    {% if tests and tests|length > 0 %}
+    <div class="card-grid">
+        {% for test in tests %}
+        <div class="analysis-item" id="item-{{ test.dir_name }}">
+            <div class="analysis-info" onclick="window.location.href='/view_saved/{{ test.dir_name }}'">
+                <h3>{{ test.test_name }}</h3>
+                <p>{{ test.timestamp }}
+                {% if test.objects_found %}
+                 • {{ test.objects_found|length }} objects detected
+                {% endif %}
+                {% if test.person_detected %}
+                 • {{ test.person_detected }} persons
+                {% endif %}
+                </p>
+            </div>
+            <div class="menu-container">
+                <button class="menu-btn" onclick="toggleMenu('{{ test.dir_name }}')">⋮</button>
+                <div class="dropdown-menu" id="menu-{{ test.dir_name }}">
+                    <button class="dropdown-item delete" onclick="deleteAnalysis('{{ test.dir_name }}', '{{ test.test_name }}')">🗑️ Delete</button>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <h3>📄 No Saved Analyses</h3>
+        <p>No saved analysis results found. Start by analyzing a video!</p>
+        <a href="/" class="btn">🔄 Start New Analysis</a>
+    </div>
+    {% endif %}
+
     <script>
     
     function openVideoFolder() {
@@ -125,6 +243,62 @@
                 }
             })
             .catch(error => alert('❌ Error opening folder: ' + error));
+    }
+
+    function toggleMenu(dirName) {
+        // Close all other menus
+        document.querySelectorAll('.dropdown-menu').forEach(menu => {
+            if (menu.id !== `menu-${dirName}`) {
+                menu.classList.remove('show');
+            }
+        });
+        
+        // Toggle current menu
+        const menu = document.getElementById(`menu-${dirName}`);
+        menu.classList.toggle('show');
+    }
+
+    // Close menu when clicking outside
+    document.addEventListener('click', function(event) {
+        if (!event.target.closest('.menu-container')) {
+            document.querySelectorAll('.dropdown-menu').forEach(menu => {
+                menu.classList.remove('show');
+            });
+        }
+    });
+
+    function deleteAnalysis(dirName, testName) {
+        if (confirm(`Are you sure you want to delete "${testName}"? This action cannot be undone.`)) {
+            fetch(`/delete_analysis/${dirName}`, {
+                method: 'DELETE'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    // Remove the item from the UI
+                    const item = document.getElementById(`item-${dirName}`);
+                    if (item) {
+                        item.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+                        item.style.opacity = '0';
+                        item.style.transform = 'translateX(-100%)';
+                        setTimeout(() => {
+                            item.remove();
+                            // Check if no more items exist
+                            const remainingItems = document.querySelectorAll('.analysis-item');
+                            if (remainingItems.length === 0) {
+                                location.reload(); // Reload to show empty state
+                            }
+                        }, 300);
+                    }
+                    alert('✅ Analysis deleted successfully!');
+                } else {
+                    alert('❌ Failed to delete: ' + data.message);
+                }
+            })
+            .catch(error => {
+                alert('❌ Error deleting analysis: ' + error);
+            });
+        }
     }
     </script>
 </body>
