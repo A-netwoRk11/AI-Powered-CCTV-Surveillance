@@ -31,22 +31,41 @@ def initialize_surveillance_model():
         return True
         
     try:
-        if COCO_NAMES.exists():
-            labels = open(str(COCO_NAMES)).read().strip().split("\n")
-        else:
-            # Use default COCO labels if file is missing
-            labels = ['person', 'bicycle', 'car', 'motorcycle', 'airplane', 'bus', 'train', 'truck']
+        print("[INFO] Starting surveillance model initialization...")
+        
+        # Always use the lightweight downloadable model for reliability
+        print("[INFO] Loading YOLOv8 nano model (will download if needed)...")
+        model = YOLO('yolov8n.pt')  # This will download if not present
+        print("[OK] YOLO model loaded successfully")
+        
+        # Try to load COCO names, fallback to default if not found
+        try:
+            if COCO_NAMES.exists():
+                labels = open(str(COCO_NAMES)).read().strip().split("\n")
+                print(f"[OK] Loaded {len(labels)} COCO class labels from file")
+            else:
+                raise FileNotFoundError("COCO names file not found")
+        except Exception as e:
+            print(f"[WARNING] Could not load COCO names file: {e}")
+            print("[INFO] Using default COCO labels")
+            # Comprehensive default COCO labels
+            labels = [
+                'person', 'bicycle', 'car', 'motorcycle', 'airplane', 'bus', 'train', 'truck',
+                'boat', 'traffic light', 'fire hydrant', 'stop sign', 'parking meter', 'bench',
+                'bird', 'cat', 'dog', 'horse', 'sheep', 'cow', 'elephant', 'bear', 'zebra',
+                'giraffe', 'backpack', 'umbrella', 'handbag', 'tie', 'suitcase', 'frisbee',
+                'skis', 'snowboard', 'sports ball', 'kite', 'baseball bat', 'baseball glove',
+                'skateboard', 'surfboard', 'tennis racket', 'bottle', 'wine glass', 'cup',
+                'fork', 'knife', 'spoon', 'bowl', 'banana', 'apple', 'sandwich', 'orange',
+                'broccoli', 'carrot', 'hot dog', 'pizza', 'donut', 'cake', 'chair', 'couch',
+                'potted plant', 'bed', 'dining table', 'toilet', 'tv', 'laptop', 'mouse',
+                'remote', 'keyboard', 'cell phone', 'microwave', 'oven', 'toaster', 'sink',
+                'refrigerator', 'book', 'clock', 'vase', 'scissors', 'teddy bear', 'hair drier',
+                'toothbrush'
+            ]
         
         colors = np.random.randint(0, 255, size=(len(labels), 3), dtype="uint8")
-        
-        if YOLO_MODEL.exists():
-            model = YOLO(str(YOLO_MODEL))
-            print("[OK] YOLO model loaded successfully")
-        else:
-            print(f"[WARNING] YOLO model not found at {YOLO_MODEL}")
-            print("[INFO] Model will be downloaded automatically on first use")
-            model = YOLO('yolov8n.pt')  # This will download the model
-            
+        print(f"[OK] Model initialization complete - {len(labels)} classes available")
         return True
             
     except Exception as e:

@@ -15,6 +15,11 @@ DEBUG = ENV == 'development'
 
 # Base paths
 BASE_DIR = Path(__file__).parent.parent
+# Fix for when running from src directory (like with cd src && gunicorn)
+# Check if we're running from src directory by checking current working directory
+if Path.cwd().name == 'src':
+    # We're in src directory, so BASE_DIR calculation is wrong, fix it
+    BASE_DIR = Path.cwd().parent
 SRC_DIR = BASE_DIR / "src"
 TEMPLATES_DIR = BASE_DIR / "templates"
 STATIC_DIR = BASE_DIR / "static"
@@ -82,11 +87,11 @@ RECORDING_CONFIG = {
     'VIDEO_CODEC': 'mp4v',              # Default video codec
 }
 
-# Logging configuration
+# Logging configuration - Use console logging for deployment safety
 LOGGING_CONFIG = {
     'LEVEL': 'DEBUG' if DEBUG else 'INFO',
     'FORMAT': '%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    'LOG_FILE': BASE_DIR / 'logs' / 'surveillance.log',
+    'LOG_FILE': None,  # Disable file logging for deployment safety
     'MAX_LOG_SIZE': 10 * 1024 * 1024,   # 10MB
     'BACKUP_COUNT': 5
 }

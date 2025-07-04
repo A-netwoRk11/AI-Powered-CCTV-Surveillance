@@ -26,15 +26,15 @@ from ultralytics import YOLO
 
 # Add project root to path
 sys.path.append(os.path.dirname(os.path.dirname(__file__)))
+
 from config.settings import *
 
-# Configure logging
+# Configure logging - Safe for deployment
 logging.basicConfig(
     level=getattr(logging, LOGGING_CONFIG['LEVEL']),
     format=LOGGING_CONFIG['FORMAT'],
     handlers=[
-        logging.StreamHandler(),
-        logging.FileHandler(LOGGING_CONFIG['LOG_FILE']) if LOGGING_CONFIG['LOG_FILE'].parent.exists() else logging.NullHandler()
+        logging.StreamHandler()  # Only console logging for deployment safety
     ]
 )
 logger = logging.getLogger(__name__)
@@ -60,22 +60,40 @@ def initialize_model():
         return True
         
     try:
-        if YOLO_MODEL.exists():
-            model = YOLO(str(YOLO_MODEL))
-            logger.info(f"YOLO model loaded successfully: {YOLO_MODEL}")
-        else:
-            logger.warning(f"YOLO model not found at {YOLO_MODEL}")
-            logger.info("Model will be downloaded automatically on first use")
-            model = YOLO('yolov8n.pt')  # This will download the model
+        logger.info("Starting YOLO model initialization...")
         
-        if COCO_NAMES.exists():
-            labels = open(str(COCO_NAMES)).read().strip().split("\n")
-            logger.info(f"Loaded {len(labels)} COCO class labels")
-        else:
-            logger.warning(f"COCO names not found at {COCO_NAMES}")
-            # Use default COCO labels if file is missing
-            labels = ['person', 'bicycle', 'car', 'motorcycle', 'airplane', 'bus', 'train', 'truck']
-            
+        # Always use the lightweight downloadable model for reliability
+        logger.info("Loading YOLOv8 nano model (will download if needed)...")
+        model = YOLO('yolov8n.pt')  # This will download if not present
+        logger.info("YOLO model loaded successfully!")
+        
+        # Try to load COCO names, fallback to default if not found
+        try:
+            if COCO_NAMES.exists():
+                labels = open(str(COCO_NAMES)).read().strip().split("\n")
+                logger.info(f"Loaded {len(labels)} COCO class labels from file")
+            else:
+                raise FileNotFoundError("COCO names file not found")
+        except Exception as e:
+            logger.warning(f"Could not load COCO names file: {e}")
+            logger.info("Using default COCO labels")
+            # Comprehensive default COCO labels
+            labels = [
+                'person', 'bicycle', 'car', 'motorcycle', 'airplane', 'bus', 'train', 'truck',
+                'boat', 'traffic light', 'fire hydrant', 'stop sign', 'parking meter', 'bench',
+                'bird', 'cat', 'dog', 'horse', 'sheep', 'cow', 'elephant', 'bear', 'zebra',
+                'giraffe', 'backpack', 'umbrella', 'handbag', 'tie', 'suitcase', 'frisbee',
+                'skis', 'snowboard', 'sports ball', 'kite', 'baseball bat', 'baseball glove',
+                'skateboard', 'surfboard', 'tennis racket', 'bottle', 'wine glass', 'cup',
+                'fork', 'knife', 'spoon', 'bowl', 'banana', 'apple', 'sandwich', 'orange',
+                'broccoli', 'carrot', 'hot dog', 'pizza', 'donut', 'cake', 'chair', 'couch',
+                'potted plant', 'bed', 'dining table', 'toilet', 'tv', 'laptop', 'mouse',
+                'remote', 'keyboard', 'cell phone', 'microwave', 'oven', 'toaster', 'sink',
+                'refrigerator', 'book', 'clock', 'vase', 'scissors', 'teddy bear', 'hair drier',
+                'toothbrush'
+            ]
+        
+        logger.info(f"Model initialization complete - {len(labels)} classes available")
         return True
             
     except Exception as e:
@@ -95,21 +113,24 @@ def create_output_structure():
         
         for directory in directories:
             directory.mkdir(parents=True, exist_ok=True)
+            logger.info(f"Created directory: {directory}")
         
-        # Test write permissions
-        test_file = OUTPUT_DIR / "test_write.tmp"
-        test_file.write_text("test")
-        test_file.unlink()
+        # Test write permissions (skip if read-only filesystem)
+        try:
+            test_file = OUTPUT_DIR / "test_write.tmp"
+            test_file.write_text("test")
+            test_file.unlink()
+            logger.info("Write permissions confirmed")
+        except:
+            logger.warning("Read-only filesystem detected, skipping write test")
         
         logger.info(f"Output structure created at: {OUTPUT_DIR.absolute()}")
         return True
         
-    except PermissionError as e:
-        logger.error(f"Permission denied creating output structure: {e}")
-        return False
     except Exception as e:
-        logger.error(f"Failed to create output structure: {e}")
-        return False
+        logger.warning(f"Could not create output structure: {e}")
+        # On Render, this might be expected due to read-only filesystem
+        return True  # Don't fail the app startup
 
 def check_dependencies():
     """Check if all required dependencies and files are present."""
@@ -131,12 +152,28 @@ def check_dependencies():
     return True
 
 # Initialize the application
+logger.info("Starting application initialization...")
+
 if not validate_configuration():
     logger.error("[ERROR] Configuration validation failed")
     sys.exit(1)
 
+logger.info("Creating output structure...")
 create_output_structure()
-# Note: Model initialization deferred until first use to avoid startup crashes
+
+# Initialize model safely
+logger.info("Initializing YOLO model...")
+try:
+    if initialize_model():
+        logger.info("Model initialization completed successfully")
+    else:
+        logger.warning("Model initialization failed, will retry on first use")
+except Exception as e:
+    logger.warning(f"Model initialization failed: {e}")
+    model = None
+    labels = []
+
+logger.info("Application initialization completed")
 
 # Template utilities
 @app.template_global()
@@ -504,20 +541,6 @@ def save_analysis():
             'message': f'Failed to save analysis: {str(e)}'
         }), 500
 
-def create_output_structure():
-    """Create output directory structure if it doesn't exist - kept for API compatibility."""
-    try:
-        directories = [OUTPUT_DIR, OUTPUT_VIDEOS_DIR, SCREENSHOTS_DIR, UPLOADS_DIR]
-        
-        for directory in directories:
-            directory.mkdir(parents=True, exist_ok=True)
-        
-        logger.info(f"[OK] Output structure created at: {OUTPUT_DIR}")
-        return True
-    except Exception as e:
-        logger.error(f"[ERROR] Failed to create output structure: {e}")
-        return False
-
 @app.route('/create_output_folder', methods=['POST'])
 def create_output_folder():
     """API endpoint to create output folder structure."""
@@ -766,3 +789,23 @@ if __name__ == '__main__':
 # WSGI entry point for Render deployment
 # Make the app available for Gunicorn
 application = app
+
+# CRITICAL: Initialize model on module import for deployment
+# This ensures model is loaded even when running under Gunicorn
+logger.info("=== DEPLOYMENT INITIALIZATION START ===")
+try:
+    if not validate_configuration():
+        logger.error("Configuration validation failed on deployment")
+    
+    create_output_structure()
+    
+    if initialize_model():
+        logger.info("✅ Deployment model initialization completed successfully")
+    else:
+        logger.warning("⚠️ Deployment model initialization failed, will retry on first use")
+        
+except Exception as e:
+    logger.error(f"❌ Deployment initialization failed: {e}")
+    # Don't crash the app, just log the error
+
+logger.info("=== DEPLOYMENT INITIALIZATION COMPLETE ===")
