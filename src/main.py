@@ -2,6 +2,7 @@
 """
 Video Object Detection Web Interface
 Upload video → Get analyzed video with object detection
+Version: 2.2 - Fixed /analyze GET request 502 error, improved error handling
 """
 
 import os
@@ -122,9 +123,14 @@ def index():
     """Home page with video upload interface"""
     return render_template('index.html')
 
-@app.route('/analyze', methods=['POST'])
+@app.route('/analyze', methods=['GET', 'POST'])
 def analyze_video():
     """Analyze uploaded video using YOLO detection with surveillanceCam.py"""
+    
+    # Handle GET requests by redirecting to homepage
+    if request.method == 'GET':
+        return redirect(url_for('index'))
+    
     global model  # Declare global at the beginning
     
     print("🔥 ANALYZE REQUEST RECEIVED!")
@@ -134,6 +140,7 @@ def analyze_video():
     
     try:
         # Ensure model is loaded for every request (important for Render)
+        global model
         if model is None:
             print("⚠️ Model not loaded, trying to initialize...")
             try:
@@ -141,7 +148,17 @@ def analyze_video():
                 print("✅ Model initialized successfully")
             except Exception as e:
                 print(f"❌ Model initialization failed: {e}")
-                return render_template('error.html', error='AI model failed to load. Please try again.')
+                return render_template('error.html', error=f'AI model failed to load: {str(e)}. Please try again in a few moments.')
+        
+        # Ensure all necessary directories exist
+        try:
+            os.makedirs(UPLOADS_DIR, exist_ok=True)
+            os.makedirs(OUTPUT_VIDEOS_DIR, exist_ok=True)
+            os.makedirs(SCREENSHOTS_DIR, exist_ok=True)
+            os.makedirs(STATIC_DIR / 'saved-test', exist_ok=True)
+        except Exception as dir_error:
+            print(f"⚠️ Directory creation warning: {dir_error}")
+            # Continue - directories might already exist or have permission issues
         
         if 'videoFile' not in request.files:
             return render_template('error.html', error='No video file uploaded')
