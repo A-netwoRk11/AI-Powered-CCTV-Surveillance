@@ -361,22 +361,18 @@
     }
 
     function openVideoFolder() {
-        fetch('/open_video_folder', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            }
-        })
+        fetch('/open_video_folder')
         .then(response => response.json())
         .then(data => {
             if (data.status === 'success') {
-                console.log('Videos folder opened successfully');
+                alert('✅ ' + data.message);
             } else {
-                alert(`❌ Error: ${data.message}`);
+                alert('❌ ' + data.message);
             }
         })
         .catch(error => {
             console.error('Error opening videos folder:', error);
+            alert('❌ Error opening folder: ' + error);
         });
     }
 

@@ -571,23 +571,32 @@ def open_video_folder():
         is_render = os.environ.get('RENDER') or os.environ.get('RENDER_SERVICE_NAME')
         
         if is_render:
-            # For Render deployment, provide information about available files
+            # For Render deployment, provide helpful information about available files
             try:
                 video_files = []
                 if OUTPUT_VIDEOS_DIR.exists():
                     video_files = [f.name for f in OUTPUT_VIDEOS_DIR.glob('*.mp4')]
                 
-                return jsonify({
-                    'status': 'info',
-                    'message': 'Running on cloud deployment - video files are accessible via download links',
-                    'folder_path': str(OUTPUT_VIDEOS_DIR),
-                    'video_files': video_files,
-                    'note': 'Use the download links in saved results to access videos'
-                })
+                if video_files:
+                    return jsonify({
+                        'status': 'success',
+                        'message': f'Found {len(video_files)} video files in output folder',
+                        'folder_path': str(OUTPUT_VIDEOS_DIR),
+                        'video_files': video_files,
+                        'note': 'Videos are accessible via download links in saved results. Cloud platforms don\'t support opening local folders.'
+                    })
+                else:
+                    return jsonify({
+                        'status': 'success',
+                        'message': 'Output folder is ready - no videos yet',
+                        'folder_path': str(OUTPUT_VIDEOS_DIR),
+                        'video_files': [],
+                        'note': 'Upload and analyze videos to see them here. Videos will be accessible via download links.'
+                    })
             except Exception as e:
                 return jsonify({
                     'status': 'error',
-                    'message': f'Could not list video files: {str(e)}'
+                    'message': f'Could not access video folder: {str(e)}'
                 }), 500
         else:
             # Local development - try to open folder

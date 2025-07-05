@@ -205,12 +205,16 @@
         fetch('/open_video_folder')
             .then(response => response.json())
             .then(data => {
-                if (data.status !== 'success') {
+                if (data.status === 'success') {
+                    alert('✅ ' + data.message);
+                } else {
                     alert('❌ ' + data.message);
                 }
             })
             .catch(error => {
-                console.error('Error opening folder:', error);            });
+                console.error('Error opening folder:', error);
+                alert('❌ Error opening folder: ' + error);
+            });
     }
     </script>
 </body>
