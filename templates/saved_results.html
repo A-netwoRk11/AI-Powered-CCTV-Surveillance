@@ -112,20 +112,30 @@
             max-width: 800px;
         }
 
-        .detection-results {
-            background: rgba(0, 50, 100, 0.2);
-            border-radius: 16px;
-            padding: 20px;
-            margin: 20px auto;
-            max-width: 800px;
-            text-align: left;
+        /* New styles for smart alert suggestion */
+        #smartAlert {
+            margin-top: 15px;
+            padding: 15px;
+            border-radius: 8px;
+            background: rgba(255, 165, 0, 0.1);
+            border: 1px solid #ffa500;
+            display: none;
         }
 
-        .detection-item {
-            margin: 10px 0;
-            padding: 10px;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 8px;
+        #smartAlert h4 {
+            color: #ffa500;
+            margin-bottom: 10px;
+        }
+
+        #smartAlert p {
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+
+        #useSuggestionBtn {
+            background-color: #ffa500;
+            font-size: 14px;
+            padding: 8px 15px;
         }
     </style>
     <link href="https://fonts.googleapis.com/css2?family=Poppins&display=swap" rel="stylesheet">
@@ -142,80 +152,18 @@
     </nav>
 
     <div class="section">
-        <h1>📊 Analysis Results</h1>
+        <h1>📊 Saved Analysis Results</h1>
         
         <div style="margin: 30px 0;">
             {% if not is_saved %}
-            <button class="btn" onclick="openVideoFolder()" style="font-size: 18px; padding: 15px 30px;">📁 Open Output Folder</button>
             <a href="/" class="btn">🔄 Analyze New Video</a>
             {% else %}
+            
             <a href="/saved_analysis" class="btn">📁 Back to Saved Results</a>
+            
             {% endif %}
         </div>
     </div>
 
-    <!-- Video Section -->
-    {% if video_filename %}
-    <div class="original-video">
-        <h3>🎬 Video</h3>
-        <video controls style="width: 100%; max-width: 600px;">
-            <source src="/upload/{{ video_filename }}" type="video/mp4">
-            Your browser does not support the video tag.
-        </video>
-    </div>
-    {% elif metadata and metadata.original_video %}
-    <div class="original-video">
-        <h3>� Video</h3>
-        <video controls style="width: 100%; max-width: 600px;">
-            <source src="/static/saved-test/{{ dir_name }}/{{ metadata.original_video }}" type="video/mp4">
-            Your browser does not support the video tag.
-        </video>
-    </div>
-    {% endif %}
-
-    <!-- Metadata Section -->
-    {% if metadata %}
-    <div class="metadata-card">
-        <h3>📋 Analysis Information</h3>
-        <p><strong>Test Name:</strong> {{ metadata.test_name }}</p>
-        <p><strong>Date:</strong> {{ metadata.timestamp }}</p>
-        {% if metadata.total_frames %}
-        <p><strong>Total Frames:</strong> {{ metadata.total_frames }}</p>
-        {% endif %}
-        {% if metadata.person_detected %}
-        <p><strong>Persons Detected:</strong> {{ metadata.person_detected }}</p>
-        {% endif %}
-        {% if metadata.analysis_summary %}
-        <p><strong>Summary:</strong> {{ metadata.analysis_summary }}</p>
-        {% endif %}
-    </div>
-    {% endif %}
-
-    <!-- No Results Message -->
-    {% if not metadata and not detections %}
-    <div class="no-results">
-        <h3>📄 No Analysis Results</h3>
-        <p>No analysis data found. Please analyze a video first.</p>
-        <a href="/" class="btn">🔄 Start New Analysis</a>
-    </div>
-    {% endif %}
-
-    <script>
-    function openVideoFolder() {
-        fetch('/open_video_folder')
-            .then(response => response.json())
-            .then(data => {
-                if (data.status === 'success') {
-                    alert('✅ ' + data.message);
-                } else {
-                    alert('❌ ' + data.message);
-                }
-            })
-            .catch(error => {
-                console.error('Error opening folder:', error);
-                alert('❌ Error opening folder: ' + error);
-            });
-    }
-    </script>
 </body>
 </html>

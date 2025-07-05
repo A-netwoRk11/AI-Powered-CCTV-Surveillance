@@ -193,7 +193,6 @@
         <h1>📁 Saved Analysis Results</h1>
         <div style="margin-top: 40px;">
             <a href="/" class="btn">🔄 Analyze New Video</a>
-            <button class="btn" onclick="openVideoFolder()">📁 Open Video Folder</button>
         </div>
     </div>
 
@@ -216,6 +215,7 @@
             <div class="menu-container">
                 <button class="menu-btn" onclick="toggleMenu('{{ test.dir_name }}')">⋮</button>
                 <div class="dropdown-menu" id="menu-{{ test.dir_name }}">
+                    <button class="dropdown-item download" onclick="downloadAnalysis('{{ test.dir_name }}', '{{ test.test_name }}')">📥 Download</button>
                     <button class="dropdown-item delete" onclick="deleteAnalysis('{{ test.dir_name }}', '{{ test.test_name }}')">🗑️ Delete</button>
                 </div>
             </div>
@@ -232,19 +232,6 @@
 
     <script>
     
-    function openVideoFolder() {
-        fetch('/open_video_folder')
-            .then(response => response.json())
-            .then(data => {
-                if (data.status === 'success') {
-                    alert('✅ ' + data.message);
-                } else {
-                    alert('❌ ' + data.message);
-                }
-            })
-            .catch(error => alert('❌ Error opening folder: ' + error));
-    }
-
     function toggleMenu(dirName) {
         // Close all other menus
         document.querySelectorAll('.dropdown-menu').forEach(menu => {
@@ -266,6 +253,21 @@
             });
         }
     });
+
+    function downloadAnalysis(dirName, testName) {
+        // Create a temporary link element to trigger download
+        const link = document.createElement('a');
+        link.href = `/download_analysis/${dirName}`;
+        link.download = `${testName}_analysis.zip`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        // Optional: Show a success message
+        setTimeout(() => {
+            alert(`📥 Downloading "${testName}" analysis...`);
+        }, 100);
+    }
 
     function deleteAnalysis(dirName, testName) {
         if (confirm(`Are you sure you want to delete "${testName}"? This action cannot be undone.`)) {

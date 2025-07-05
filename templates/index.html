@@ -157,14 +157,6 @@
         <div class="hero-section">
             <h1>AI-Powered CCTV Surveillance</h1>
 
-        <div style="margin-bottom: 20px;">
-            <p>If you first time use this website Then firstly create output folder for saving analyzed videos and screenshots.</p>
-            <button type="button" class="btn" onclick="createOutputFolder()" id="createFolderBtn" 
-                    style="background-color: #2E8B57; margin-bottom: 10px;">
-                📁 Create Output Folders
-            </button>
-        </div>
-
         <div style="display: flex; gap: 30px; justify-content: center; flex-wrap: wrap; margin-bottom: 30px;">
             
             <div style="flex: 1; min-width: 300px; max-width: 450px; padding: 30px; border-radius: 15px; background: rgba(255,255,255,0.1); border: 2px solid #30cfd0;">
@@ -249,39 +241,7 @@
         }
     }
 
-    function createOutputFolder() {
-        const createBtn = document.getElementById('createFolderBtn');
-        createBtn.textContent = '📁 Creating Folders...';
-        createBtn.disabled = true;
 
-        fetch('/create_output_folder', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.status === 'success') {
-                alert('✅ ' + data.message + '\n\n📁 Output folders created at:\n\n' + 
-                      '🎬 Videos: ' + data.paths.videos + '\n\n' +
-                      '📸 Screenshots: ' + data.paths.screenshots + '\n\n' +
-                      '📤 Uploads: ' + data.paths.uploads + '\n\n' +
-                      'You can now start analyzing videos!');
-                createBtn.textContent = '✅ Folders Created';
-                createBtn.style.backgroundColor = '#228B22';
-            } else {
-                alert('❌ ' + data.message);
-                createBtn.textContent = '📁 Create Output Folders (First Time Setup)';
-                createBtn.disabled = false;
-            }
-        })
-        .catch(error => {
-            alert('❌ Error creating folders: ' + error);
-            createBtn.textContent = '📁 Create Output Folders (First Time Setup)';
-            createBtn.disabled = false;
-        });
-    }
 
     function startLiveRecording() {
         const liveRecordBtn = document.getElementById('liveRecordBtn');
@@ -360,21 +320,7 @@
         });
     }
 
-    function openVideoFolder() {
-        fetch('/open_video_folder')
-        .then(response => response.json())
-        .then(data => {
-            if (data.status === 'success') {
-                alert('✅ ' + data.message);
-            } else {
-                alert('❌ ' + data.message);
-            }
-        })
-        .catch(error => {
-            console.error('Error opening videos folder:', error);
-            alert('❌ Error opening folder: ' + error);
-        });
-    }
+
 
     document.getElementById('analysisForm').addEventListener('submit', function(e) {
         const fileInput = document.getElementById('fileInput');

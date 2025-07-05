@@ -99,31 +99,6 @@ class WebInterfaceTests(unittest.TestCase):
         except requests.exceptions.RequestException as e:
             self.fail(f"Failed to access saved analysis page: {e}")
     
-    def test_create_output_folder_endpoint(self):
-        """Test the output folder creation endpoint."""
-        print("\n📁 Testing output folder creation...")
-        
-        try:
-            response = requests.post(
-                f"{self.base_url}/create_output_folder",
-                headers={'Content-Type': 'application/json'},
-                timeout=self.config.TIMEOUT
-            )
-            
-            self.assertIn(response.status_code, [200, 201], 
-                         "Create folder endpoint should return success status")
-            
-            # Try to parse JSON response
-            try:
-                data = response.json()
-                self.assertIn('status', data, "Response should contain status")
-                print(f"✅ Output folder creation test passed! Status: {data.get('status')}")
-            except json.JSONDecodeError:
-                self.fail("Response should be valid JSON")
-                
-        except requests.exceptions.RequestException as e:
-            self.fail(f"Failed to test create output folder: {e}")
-    
     def test_file_upload_functionality(self):
         """Test video file upload and analysis."""
         print("\n📤 Testing file upload functionality...")
@@ -198,22 +173,6 @@ class WebInterfaceTests(unittest.TestCase):
     def test_api_endpoints_json_response(self):
         """Test API endpoints that should return JSON."""
         print("\n🔗 Testing JSON API endpoints...")
-        
-        # Test create output folder endpoint
-        try:
-            response = requests.post(
-                f"{self.base_url}/create_output_folder",
-                headers={'Content-Type': 'application/json'},
-                timeout=self.config.TIMEOUT
-            )
-            
-            if response.status_code == 200:
-                data = response.json()
-                self.assertIsInstance(data, dict, "JSON endpoints should return dict")
-                self.assertIn('status', data, "Response should have status field")
-                
-        except (requests.exceptions.RequestException, json.JSONDecodeError) as e:
-            print(f"⚠️ JSON API test warning: {e}")
         
         print("✅ JSON API endpoints test completed!")
 
