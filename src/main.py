@@ -133,6 +133,8 @@ def index():
 @app.route('/analyze', methods=['POST'])
 def analyze_video():
     """Analyze uploaded video using YOLO detection with surveillanceCam.py"""
+    global model  # Declare global at the beginning
+    
     print("🔥 ANALYZE REQUEST RECEIVED!")
     print(f"📋 Request method: {request.method}")
     print(f"📋 Request files: {list(request.files.keys())}")
@@ -143,7 +145,6 @@ def analyze_video():
         if model is None:
             print("⚠️ Model not loaded, trying to initialize...")
             try:
-                global model
                 model = YOLO('yolov8n.pt')  # Download if needed
                 print("✅ Model initialized successfully")
             except Exception as e:
