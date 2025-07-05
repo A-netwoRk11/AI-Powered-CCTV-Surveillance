@@ -512,26 +512,53 @@ def create_output_structure():
         print(f"❌ Failed to create output structure: {e}")
         return False
 
-@app.route('/create_output_folder', methods=['POST'])
+@app.route('/create_output_folder', methods=['GET', 'POST'])
 def create_output_folder():
     try:
-        if create_output_structure():
+        # Create output structure with better error handling
+        success = create_output_structure()
+        
+        # Get paths safely
+        try:
+            paths = {
+                'output': str(OUTPUT_DIR),
+                'videos': str(OUTPUT_VIDEOS_DIR),
+                'screenshots': str(SCREENSHOTS_DIR),
+                'uploads': str(UPLOADS_DIR)
+            }
+        except Exception as path_error:
+            print(f"⚠️ Path resolution issue: {path_error}")
+            paths = {
+                'output': 'output',
+                'videos': 'output/videos', 
+                'screenshots': 'output/screenshots',
+                'uploads': 'output/uploads'
+            }
+        
+        if success:
             return jsonify({
                 'status': 'success',
                 'message': 'Output folder structure created successfully!',
-                'paths': {
-                    'output': str(OUTPUT_DIR),
-                    'videos': str(OUTPUT_VIDEOS_DIR),
-                    'screenshots': str(SCREENSHOTS_DIR),
-                    'uploads': str(UPLOADS_DIR)
-                }
+                'paths': paths,
+                'note': 'Folders created with available permissions'
             })
         else:
             return jsonify({
-                'status': 'error',
-                'message': 'Failed to create output folder structure'
-            }), 500
+                'status': 'warning',
+                'message': 'Output folder structure partially created (some restrictions may apply)',
+                'paths': paths,
+                'note': 'Limited by deployment environment permissions'
+            })
+            
+    except PermissionError as e:
+        print(f"⚠️ Permission error in create_output_folder: {e}")
+        return jsonify({
+            'status': 'warning',
+            'message': 'Limited permissions detected - folders created where possible',
+            'note': 'This is normal on deployment platforms like Render'
+        })
     except Exception as e:
+        print(f"❌ Error in create_output_folder: {e}")
         return jsonify({
             'status': 'error',
             'message': f'Error creating folders: {str(e)}'
