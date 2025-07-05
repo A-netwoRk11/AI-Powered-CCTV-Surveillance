@@ -101,34 +101,46 @@ def initialize_model():
         return False
 
 def create_output_structure():
-    """Create output directory structure with proper error handling."""
+    """Create output directory structure with proper error handling for deployment."""
     try:
-        # Create all necessary directories
+        # Create all necessary directories with error handling
         directories = [
             OUTPUT_DIR, OUTPUT_VIDEOS_DIR, SCREENSHOTS_DIR, UPLOADS_DIR,
             RESULTS_DIR, SAVED_ANALYSIS_DIR
         ]
         
+        created_dirs = []
         for directory in directories:
-            directory.mkdir(parents=True, exist_ok=True)
-            logger.info(f"Created directory: {directory}")
+            try:
+                directory.mkdir(parents=True, exist_ok=True)
+                created_dirs.append(str(directory))
+                logger.debug(f"Created/verified directory: {directory}")
+            except PermissionError:
+                logger.warning(f"Permission denied creating {directory} (read-only filesystem)")
+                # Continue without failing
+            except Exception as e:
+                logger.warning(f"Could not create directory {directory}: {e}")
+                # Continue without failing
         
-        # Test write permissions (skip if read-only filesystem)
-        try:
-            test_file = OUTPUT_DIR / "test_write.tmp"
-            test_file.write_text("test")
-            test_file.unlink()
-            logger.info("Write permissions confirmed")
-        except:
-            logger.warning("Read-only filesystem detected, skipping write test")
+        if created_dirs:
+            logger.info(f"Output structure ready - {len(created_dirs)} directories available")
         
-        logger.info(f"Output structure created at: {OUTPUT_DIR.absolute()}")
+        # Test write permissions only if we have directories
+        if OUTPUT_DIR.exists():
+            try:
+                test_file = OUTPUT_DIR / "test_write.tmp"
+                test_file.write_text("test")
+                test_file.unlink()
+                logger.info("Write permissions confirmed")
+            except:
+                logger.warning("Limited write permissions detected")
+        
         return True
         
     except Exception as e:
-        logger.warning(f"Could not create output structure: {e}")
-        # On Render, this might be expected due to read-only filesystem
-        return True  # Don't fail the app startup
+        logger.warning(f"Output structure creation had issues: {e}")
+        # Don't fail the app - Render might have read-only filesystem
+        return True
 
 def check_dependencies():
     """Check if all required dependencies and files are present."""
@@ -189,11 +201,17 @@ def index():
 def analyze_video():
     """Analyze uploaded video using YOLO detection with surveillanceCam.py"""
     logger.info("[INFO] ANALYZE REQUEST RECEIVED!")
-    logger.debug(f"Request method: {request.method}")
-    logger.debug(f"Request files: {list(request.files.keys())}")
-    logger.debug(f"Request form: {dict(request.form)}")
     
     try:
+        # Ensure model is initialized for every request (important for Render)
+        if model is None:
+            logger.warning("Model not initialized, initializing now...")
+            if not initialize_model():
+                return render_template('error.html', error='AI model failed to load. Please try again.')
+        
+        # Ensure directories exist for every request
+        create_output_structure()
+        
         # Validate file upload
         if 'videoFile' not in request.files:
             logger.warning("No video file in request")
@@ -211,11 +229,22 @@ def analyze_video():
             return render_template('error.html', 
                                  error=f'Invalid file type. Allowed: {", ".join(WEB_CONFIG["UPLOAD_EXTENSIONS"])}')
         
-        # Save uploaded file
+        # Save uploaded file with better error handling
         filename = secure_filename(file.filename)
         timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
         safe_filename = f"{timestamp}_{filename}"
-        filepath = UPLOADS_DIR / safe_filename
+        
+        # Try to save to uploads directory, fallback to temp if needed
+        try:
+            UPLOADS_DIR.mkdir(parents=True, exist_ok=True)
+            filepath = UPLOADS_DIR / safe_filename
+        except:
+            # Fallback to temp directory if uploads dir is not writable
+            import tempfile
+            temp_dir = Path(tempfile.gettempdir())
+            filepath = temp_dir / safe_filename
+            logger.warning(f"Using temp directory for upload: {filepath}")
+        
         file.save(str(filepath))
         
         # Get form data
@@ -235,7 +264,17 @@ def analyze_video():
             return render_template('error.html', error='Analysis module not available')
         
         logger.info("[INFO] Starting video processing...")
-        detection_results = process_video(str(filepath), OUTPUT_VIDEOS_DIR)
+        
+        # Try to process with output directory, fallback if needed
+        try:
+            OUTPUT_VIDEOS_DIR.mkdir(parents=True, exist_ok=True)
+            output_dir = OUTPUT_VIDEOS_DIR
+        except:
+            import tempfile
+            output_dir = Path(tempfile.gettempdir())
+            logger.warning(f"Using temp directory for output: {output_dir}")
+        
+        detection_results = process_video(str(filepath), output_dir)
         
         if detection_results is None:
             logger.error("Video processing returned None")
@@ -274,24 +313,31 @@ def analyze_video():
             'processing_time': detection_results.get('processing_time', 0)
         }
         
-        # Save results
-        result_dir = SAVED_ANALYSIS_DIR / timestamp
-        result_dir.mkdir(parents=True, exist_ok=True)
-        
-        # Copy original video
-        shutil.copy2(str(filepath), str(result_dir / safe_filename))
-        
-        # Copy analyzed video if available
-        if detection_results.get('output_file') and os.path.exists(detection_results['output_file']):
-            analyzed_filename = Path(detection_results['output_file']).name
-            shutil.copy2(detection_results['output_file'], str(result_dir / analyzed_filename))
-            result_data['analyzed_video'] = analyzed_filename
-        
-        # Save metadata
-        with open(result_dir / 'metadata.json', 'w') as f:
-            json.dump(result_data, f, indent=2)
-        
-        logger.info(f"[OK] Analysis complete! Results saved to: {result_dir}")
+        # Save results with better error handling
+        try:
+            SAVED_ANALYSIS_DIR.mkdir(parents=True, exist_ok=True)
+            result_dir = SAVED_ANALYSIS_DIR / timestamp
+            result_dir.mkdir(parents=True, exist_ok=True)
+            
+            # Copy original video
+            shutil.copy2(str(filepath), str(result_dir / safe_filename))
+            
+            # Copy analyzed video if available
+            if detection_results.get('output_file') and os.path.exists(detection_results['output_file']):
+                analyzed_filename = Path(detection_results['output_file']).name
+                shutil.copy2(detection_results['output_file'], str(result_dir / analyzed_filename))
+                result_data['analyzed_video'] = analyzed_filename
+            
+            # Save metadata
+            with open(result_dir / 'metadata.json', 'w') as f:
+                json.dump(result_data, f, indent=2)
+            
+            logger.info(f"[OK] Analysis complete! Results saved to: {result_dir}")
+            
+        except Exception as save_error:
+            logger.warning(f"Could not save results to disk: {save_error}")
+            # Continue without failing - just don't save to disk
+            result_data['analyzed_video'] = detection_results.get('output_file', '')
         
         # Use the existing saved_results.html template
         # Create metadata object that matches template expectations
@@ -319,11 +365,22 @@ def analyze_video():
 
 @app.route('/saved_analysis')
 def saved_analysis():
-    """Display all saved analysis results."""
+    """Display all saved analysis results with better error handling."""
     try:
         saved_tests = []
         
-        if SAVED_ANALYSIS_DIR.exists():
+        # Check if saved analysis directory exists
+        if not SAVED_ANALYSIS_DIR.exists():
+            logger.info("No saved analysis directory found - creating empty one")
+            try:
+                SAVED_ANALYSIS_DIR.mkdir(parents=True, exist_ok=True)
+            except:
+                logger.warning("Could not create saved analysis directory")
+                # Return empty results instead of failing
+                return render_template('saved_analysis.html', tests=[])
+        
+        # Load saved analyses
+        try:
             for test_dir in SAVED_ANALYSIS_DIR.iterdir():
                 if test_dir.is_dir():
                     metadata_file = test_dir / 'metadata.json'
@@ -340,6 +397,10 @@ def saved_analysis():
                                 saved_tests.append(metadata)
                         except Exception as e:
                             logger.error(f"Error loading metadata from {metadata_file}: {e}")
+        except Exception as e:
+            logger.warning(f"Error reading saved analysis directory: {e}")
+            # Return empty results instead of failing
+            return render_template('saved_analysis.html', tests=[])
         
         # Sort by timestamp (newest first)
         saved_tests.sort(key=lambda x: x.get('timestamp', ''), reverse=True)
@@ -348,7 +409,7 @@ def saved_analysis():
         return render_template('saved_analysis.html', tests=saved_tests)
         
     except Exception as e:
-        logger.error(f"Error loading saved analyses: {e}")
+        logger.error(f"Error in saved_analysis route: {e}")
         return render_template('error.html', error=f'Error loading saved analyses: {str(e)}')
 
 @app.route('/view_saved/<dir_name>')
@@ -587,23 +648,50 @@ def signal_handler(signum, frame):
 
 @app.route('/open_video_folder')
 def open_video_folder():
+    """Open video folder or provide download info for Render deployment."""
     try:
-        import subprocess
-        import os
+        # On Render, we can't open local folders, so provide useful info instead
+        is_render = os.environ.get('RENDER') or os.environ.get('RENDER_SERVICE_NAME')
         
-        video_folder = str(OUTPUT_VIDEOS_DIR)
-        
-        # Ensure folder exists
-        os.makedirs(video_folder, exist_ok=True)
-        
-        # Open folder in Windows Explorer (don't use check=True to avoid exceptions)
-        subprocess.run(['explorer', video_folder])
-        
-        return jsonify({
-            'status': 'success',
-            'message': 'Video folder opened successfully!',
-            'folder_path': video_folder
-        })
+        if is_render:
+            # For Render deployment, provide information about available files
+            try:
+                video_files = []
+                if OUTPUT_VIDEOS_DIR.exists():
+                    video_files = [f.name for f in OUTPUT_VIDEOS_DIR.glob('*.mp4')]
+                
+                return jsonify({
+                    'status': 'info',
+                    'message': 'Running on Render - video files are accessible via download links',
+                    'folder_path': str(OUTPUT_VIDEOS_DIR),
+                    'video_files': video_files,
+                    'note': 'Use the download links in the saved results to access videos'
+                })
+            except Exception as e:
+                return jsonify({
+                    'status': 'error',
+                    'message': f'Could not list video files: {str(e)}'
+                }), 500
+        else:
+            # Local development - try to open folder
+            import subprocess
+            
+            video_folder = str(OUTPUT_VIDEOS_DIR)
+            
+            # Ensure folder exists
+            try:
+                OUTPUT_VIDEOS_DIR.mkdir(parents=True, exist_ok=True)
+            except:
+                pass
+            
+            # Open folder in Windows Explorer (don't use check=True to avoid exceptions)
+            subprocess.run(['explorer', video_folder])
+            
+            return jsonify({
+                'status': 'success',
+                'message': 'Video folder opened successfully!',
+                'folder_path': video_folder
+            })
         
     except Exception as e:
         return jsonify({
@@ -792,11 +880,18 @@ application = app
 # This ensures model is loaded even when running under Gunicorn
 logger.info("=== DEPLOYMENT INITIALIZATION START ===")
 try:
+    logger.info(f"BASE_DIR: {BASE_DIR}")
+    logger.info(f"Current working directory: {os.getcwd()}")
+    logger.info(f"Python executable: {sys.executable}")
+    
     if not validate_configuration():
         logger.error("Configuration validation failed on deployment")
     
+    # Create directories first
     create_output_structure()
     
+    # Initialize model - this is critical for Render
+    logger.info("Initializing model for deployment...")
     if initialize_model():
         logger.info("✅ Deployment model initialization completed successfully")
     else:
@@ -804,6 +899,16 @@ try:
         
 except Exception as e:
     logger.error(f"❌ Deployment initialization failed: {e}")
+    import traceback
+    logger.error(traceback.format_exc())
     # Don't crash the app, just log the error
 
 logger.info("=== DEPLOYMENT INITIALIZATION COMPLETE ===")
+
+# Additional safety check for Render
+if os.environ.get('RENDER') or os.environ.get('RENDER_SERVICE_NAME'):
+    logger.info("🚀 Running on Render - deployment mode active")
+    # Force initialize model if not already done
+    if model is None:
+        logger.info("🔄 Forcing model initialization for Render...")
+        initialize_model()

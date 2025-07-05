@@ -13,12 +13,15 @@ from pathlib import Path
 ENV = os.environ.get('FLASK_ENV', os.environ.get('ENVIRONMENT', 'production'))
 DEBUG = ENV == 'development'
 
-# Base paths
+# Base paths - Fixed for Render deployment
 BASE_DIR = Path(__file__).parent.parent
-# Fix for when running from src directory (like with cd src && gunicorn)
-# Check if we're running from src directory by checking current working directory
-if Path.cwd().name == 'src':
-    # We're in src directory, so BASE_DIR calculation is wrong, fix it
+# Ensure BASE_DIR is absolute and correct regardless of working directory
+BASE_DIR = BASE_DIR.resolve()
+
+# For Render deployment, check if we're running from different working directory
+if not (BASE_DIR / "src").exists() and (Path.cwd() / "src").exists():
+    BASE_DIR = Path.cwd()
+elif Path.cwd().name == 'src' and (Path.cwd().parent / "src").exists():
     BASE_DIR = Path.cwd().parent
 SRC_DIR = BASE_DIR / "src"
 TEMPLATES_DIR = BASE_DIR / "templates"

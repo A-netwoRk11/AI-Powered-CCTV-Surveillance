@@ -128,7 +128,15 @@ def process_video(video_file_path, output_dir=None, skip_frames=DEFAULT_SKIP_FRA
     else:
         output_dir = Path(output_dir)
     
-    os.makedirs(output_dir, exist_ok=True)
+    # Create output directory with better error handling
+    try:
+        output_dir.mkdir(parents=True, exist_ok=True)
+    except Exception as e:
+        print(f"[WARNING] Could not create output directory {output_dir}: {e}")
+        # Try temp directory as fallback
+        import tempfile
+        output_dir = Path(tempfile.gettempdir())
+        print(f"[INFO] Using temp directory for output: {output_dir}")
     
     cap = None
     out = None
