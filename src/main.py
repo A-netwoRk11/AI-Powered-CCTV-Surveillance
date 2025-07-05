@@ -10,6 +10,8 @@ import json
 import subprocess
 import datetime
 import shutil
+import zipfile
+import tempfile
 from pathlib import Path
 from flask import Flask, render_template, request, redirect, url_for, send_file, jsonify
 from werkzeug.utils import secure_filename
@@ -28,27 +30,17 @@ app.config['SECRET_KEY'] = 'your-secret-key-here'
 app.config['UPLOAD_FOLDER'] = str(UPLOADS_DIR)
 app.config['MAX_CONTENT_LENGTH'] = 500 * 1024 * 1024
 
-def create_output_structure():
-    try:
-        os.makedirs(OUTPUT_DIR, exist_ok=True)
-        
-        os.makedirs(OUTPUT_VIDEOS_DIR, exist_ok=True)
-        os.makedirs(SCREENSHOTS_DIR, exist_ok=True) 
-        os.makedirs(UPLOADS_DIR, exist_ok=True)
-        
-        print(f"✅ Output structure created at: {OUTPUT_DIR}")
-        return True
-    except Exception as e:
-        print(f"❌ Failed to create output structure: {e}")
-        return False
-
 @app.template_global()
 def zip_lists(*args):
     return zip(*args)
 
 app.jinja_env.globals.update(zip=zip)
 
-create_output_structure()
+# Create necessary directories
+os.makedirs(OUTPUT_DIR, exist_ok=True)
+os.makedirs(OUTPUT_VIDEOS_DIR, exist_ok=True)
+os.makedirs(SCREENSHOTS_DIR, exist_ok=True)
+os.makedirs(UPLOADS_DIR, exist_ok=True)
 os.makedirs(STATIC_DIR / 'saved-test', exist_ok=True)
 os.makedirs(STATIC_DIR / 'results', exist_ok=True)
 
@@ -150,9 +142,6 @@ def analyze_video():
             except Exception as e:
                 print(f"❌ Model initialization failed: {e}")
                 return render_template('error.html', error='AI model failed to load. Please try again.')
-        
-        # Ensure directories exist
-        create_output_structure()
         
         if 'videoFile' not in request.files:
             return render_template('error.html', error='No video file uploaded')
@@ -426,15 +415,6 @@ def run_surveillance():
     except Exception as e:
         return jsonify({'status': 'error', 'message': str(e)})
 
-@app.route('/send_email')
-def send_email():
-    try:
-        email_script = SRC_DIR / 'sendGmail.py'
-        subprocess.run([sys.executable, str(email_script)], cwd=str(SRC_DIR))
-        return jsonify({'status': 'success', 'message': 'Email sent successfully'})
-    except Exception as e:
-        return jsonify({'status': 'error', 'message': str(e)})
-
 @app.route('/debug/info')
 def debug_info():
     """Debug information endpoint"""
@@ -496,134 +476,6 @@ def save_analysis():
         return jsonify({
             'status': 'error',
             'message': f'Failed to save analysis: {str(e)}'
-        }), 500
-
-def create_output_structure():
-    """Create output directory structure if it doesn't exist"""
-    try:
-        os.makedirs(OUTPUT_DIR, exist_ok=True)
-        
-        os.makedirs(OUTPUT_VIDEOS_DIR, exist_ok=True)
-        os.makedirs(SCREENSHOTS_DIR, exist_ok=True) 
-        os.makedirs(UPLOADS_DIR, exist_ok=True)
-        
-        print(f"✅ Output structure created at: {OUTPUT_DIR}")
-        return True
-    except Exception as e:
-        print(f"❌ Failed to create output structure: {e}")
-        return False
-
-@app.route('/create_output_folder', methods=['GET', 'POST'])
-def create_output_folder():
-    try:
-        # Create output structure with better error handling
-        success = create_output_structure()
-        
-        # Get paths safely
-        try:
-            paths = {
-                'output': str(OUTPUT_DIR),
-                'videos': str(OUTPUT_VIDEOS_DIR),
-                'screenshots': str(SCREENSHOTS_DIR),
-                'uploads': str(UPLOADS_DIR)
-            }
-        except Exception as path_error:
-            print(f"⚠️ Path resolution issue: {path_error}")
-            paths = {
-                'output': 'output',
-                'videos': 'output/videos', 
-                'screenshots': 'output/screenshots',
-                'uploads': 'output/uploads'
-            }
-        
-        if success:
-            return jsonify({
-                'status': 'success',
-                'message': 'Output folder structure created successfully!',
-                'paths': paths,
-                'note': 'Folders created with available permissions'
-            })
-        else:
-            return jsonify({
-                'status': 'warning',
-                'message': 'Output folder structure partially created (some restrictions may apply)',
-                'paths': paths,
-                'note': 'Limited by deployment environment permissions'
-            })
-            
-    except PermissionError as e:
-        print(f"⚠️ Permission error in create_output_folder: {e}")
-        return jsonify({
-            'status': 'warning',
-            'message': 'Limited permissions detected - folders created where possible',
-            'note': 'This is normal on deployment platforms like Render'
-        })
-    except Exception as e:
-        print(f"❌ Error in create_output_folder: {e}")
-        return jsonify({
-            'status': 'error',
-            'message': f'Error creating folders: {str(e)}'
-        }), 500
-
-@app.route('/open_video_folder')
-def open_video_folder():
-    try:
-        # Check if running on Render (cloud deployment)
-        is_render = os.environ.get('RENDER') or os.environ.get('RENDER_SERVICE_NAME')
-        
-        if is_render:
-            # For Render deployment, provide helpful information about available files
-            try:
-                video_files = []
-                if OUTPUT_VIDEOS_DIR.exists():
-                    video_files = [f.name for f in OUTPUT_VIDEOS_DIR.glob('*.mp4')]
-                
-                if video_files:
-                    return jsonify({
-                        'status': 'success',
-                        'message': f'Found {len(video_files)} video files in output folder',
-                        'folder_path': str(OUTPUT_VIDEOS_DIR),
-                        'video_files': video_files,
-                        'note': 'Videos are accessible via download links in saved results. Cloud platforms don\'t support opening local folders.'
-                    })
-                else:
-                    return jsonify({
-                        'status': 'success',
-                        'message': 'Output folder is ready - no videos yet',
-                        'folder_path': str(OUTPUT_VIDEOS_DIR),
-                        'video_files': [],
-                        'note': 'Upload and analyze videos to see them here. Videos will be accessible via download links.'
-                    })
-            except Exception as e:
-                return jsonify({
-                    'status': 'error',
-                    'message': f'Could not access video folder: {str(e)}'
-                }), 500
-        else:
-            # Local development - try to open folder
-            import subprocess
-            
-            video_folder = str(OUTPUT_VIDEOS_DIR)
-            
-            # Ensure folder exists
-            try:
-                OUTPUT_VIDEOS_DIR.mkdir(parents=True, exist_ok=True)
-            except:
-                pass
-            
-            # Open folder in Windows Explorer
-            subprocess.run(['explorer', video_folder])
-            
-            return jsonify({
-                'status': 'success',
-                'message': 'Video folder opened successfully!',
-                'folder_path': video_folder
-            })
-        
-    except Exception as e:
-        return jsonify({
-            'status': 'error',
-            'message': f'Failed to open video folder: {str(e)}'
         }), 500
 
 @app.route('/record_webcam', methods=['POST'])
@@ -706,6 +558,106 @@ def analyze_live_recording():
             'message': f'Failed to analyze live recording: {str(e)}'
         }), 500
 
+@app.route('/download_analysis/<dir_name>')
+def download_analysis(dir_name):
+    """Download analyzed video and related files as a ZIP archive"""
+    try:
+        # Find the analysis directory
+        analysis_dir = STATIC_DIR / 'saved-test' / dir_name
+        
+        if not analysis_dir.exists():
+            return jsonify({
+                'status': 'error',
+                'message': f'Analysis directory not found: {dir_name}'
+            }), 404
+        
+        # Create a temporary ZIP file
+        temp_zip = tempfile.NamedTemporaryFile(delete=False, suffix='.zip')
+        temp_zip.close()
+        
+        with zipfile.ZipFile(temp_zip.name, 'w', zipfile.ZIP_DEFLATED) as zipf:
+            # Add all files from the analysis directory
+            for file_path in analysis_dir.rglob('*'):
+                if file_path.is_file():
+                    # Add file to ZIP with relative path
+                    arc_name = file_path.relative_to(analysis_dir)
+                    zipf.write(file_path, arc_name)
+            
+            # Also look for the analyzed video in the output/videos directory
+            video_files = list(OUTPUT_VIDEOS_DIR.glob(f"{dir_name}_analyzed_*.mp4"))
+            for video_file in video_files:
+                if video_file.exists():
+                    zipf.write(video_file, f"analyzed_video_{video_file.name}")
+        
+        # Generate download filename
+        download_name = f"{dir_name}_analysis.zip"
+        
+        def cleanup_temp_file():
+            """Clean up temporary file after download"""
+            try:
+                os.unlink(temp_zip.name)
+            except:
+                pass
+        
+        # Schedule cleanup after response is sent
+        threading.Timer(10.0, cleanup_temp_file).start()
+        
+        return send_file(
+            temp_zip.name,
+            as_attachment=True,
+            download_name=download_name,
+            mimetype='application/zip'
+        )
+        
+    except Exception as e:
+        return jsonify({
+            'status': 'error',
+            'message': f'Failed to create download archive: {str(e)}'
+        }), 500
+
+@app.route('/delete_analysis/<dir_name>', methods=['DELETE'])
+def delete_analysis(dir_name):
+    """Delete an analysis and all its associated files"""
+    try:
+        # Find and delete the analysis directory
+        analysis_dir = STATIC_DIR / 'saved-test' / dir_name
+        
+        if analysis_dir.exists():
+            shutil.rmtree(analysis_dir)
+            print(f"🗑️ Deleted analysis directory: {analysis_dir}")
+        
+        # Also delete the analyzed video files
+        video_files = list(OUTPUT_VIDEOS_DIR.glob(f"{dir_name}_analyzed_*.mp4"))
+        for video_file in video_files:
+            if video_file.exists():
+                video_file.unlink()
+                print(f"🗑️ Deleted video file: {video_file}")
+        
+        # Delete screenshots
+        screenshot_files = list(SCREENSHOTS_DIR.glob(f"*_{dir_name}_*.jpg"))
+        for screenshot_file in screenshot_files:
+            if screenshot_file.exists():
+                screenshot_file.unlink()
+                print(f"🗑️ Deleted screenshot: {screenshot_file}")
+        
+        # Delete upload file
+        upload_files = list(UPLOADS_DIR.glob(f"{dir_name}.*"))
+        for upload_file in upload_files:
+            if upload_file.exists():
+                upload_file.unlink()
+                print(f"🗑️ Deleted upload file: {upload_file}")
+        
+        return jsonify({
+            'status': 'success',
+            'message': f'Analysis "{dir_name}" deleted successfully'
+        })
+        
+    except Exception as e:
+        return jsonify({
+            'status': 'error',
+            'message': f'Failed to delete analysis: {str(e)}'
+        }), 500
+
 if __name__ == '__main__':
     print("🚀 Starting AI-Powered CCTV Surveillance Web Interface...")
     print(f"📂 Templates: {TEMPLATES_DIR}")
@@ -750,6 +702,4 @@ if model is None:
     except Exception as e:
         print(f"⚠️ Deployment model initialization failed: {e}")
 
-# Create output structure for deployment
-create_output_structure()
 print("✅ Deployment initialization complete")
