@@ -2,7 +2,7 @@
 """
 Video Object Detection Web Interface
 Upload video → Get analyzed video with object detection
-Version: 2.2 - Fixed /analyze GET request 502 error, improved error handling
+Version: 2.2.1 - Force rebuild for Render deployment
 """
 
 import os
